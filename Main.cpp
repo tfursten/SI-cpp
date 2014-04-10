@@ -27,9 +27,9 @@ int main(int ac, char** av)
         ("pollen,p", po::value<int>(&nPollen)->default_value(10), "Set number of pollen produced per individual")
         ("ovule,o", po::value<int>(&nOvule)->default_value(10), "Set number of ovules per individual")
         ("markers,n", po::value<int>(&nMarkers)->default_value(3), "Set number of markers")
-        ("smut,u", po::value<double>(&dSMut)->default_value(0.0), "Set S locus mutation rate")
-        ("mmut,m", po::value<double>(&dMMut)->default_value(0.0), "Set marker mutation rate")
-        ("dmut, d", po::value<double>(&dDMut)->default_value(0.0), "Set deleterious mutation rate for unlinked locus")
+        ("smut,u", po::value<double>(&dSMut)->default_value(0.00001), "Set S locus mutation rate")
+        ("mmut,m", po::value<double>(&dMMut)->default_value(0.00001), "Set marker mutation rate")
+        ("dmut, d", po::value<double>(&dDMut)->default_value(0.0001), "Set deleterious mutation rate for unlinked locus")
         ("distribution,d", po::value<string>(&dist_name)->default_value("exponential"), "Set Dispersal Distribution")
         ("sigmaP,q", po::value<double>(&dSigmaP)->default_value(2.0), "Set dispersal parameter for pollen")
         ("sigmaS,r", po::value<double>(&dSigmaS)->default_value(2.0), "Set dispersal parameter for seed")
@@ -84,10 +84,9 @@ int main(int ac, char** av)
             }
         }
 
-        if (!vm.count("mmut"))
-        {
-            dMMut = dSMut;
-        }
+        assert(dSMut>0);
+        assert(dMMut>0);
+        assert(dSMut>0);
 
 
 
@@ -130,7 +129,6 @@ int main(int ac, char** av)
     //Initialize Population
 
     Population pop(fout);
-    cout << "I am here 1" << endl;
     pop.initialize(nMaxX,nMaxY,nPollen,nOvule, nMarkers, si, dist_name);
     pop.param(dSigmaP, dSigmaS, dSMut, dMMut, dDMut, seed);
     //Run Simulation

@@ -11,12 +11,15 @@ typedef std::vector<int> haplotype;
 typedef std::vector<haplotype> genotype;
 typedef std::vector<unsigned int> dominance;
 
+
+
 struct genes
 {
     genotype g;
     genotype par;
     genotype gpar;
     std::pair<int,int> del;
+
 };
 
 struct gamete
@@ -25,7 +28,20 @@ struct gamete
     haplotype par;
     haplotype gpar;
     int del;
+    std::pair<int,int> s;
+    gamete(){}
+    gamete(int m)
+    {
+        h.assign((m+1),-1);
+        par.assign((m+1),-1);
+        gpar.assign((m+1),-1);
+        del = 0;
+        s = std::make_pair(-1,-1);
+    }
 };
+void printGenotype(haplotype &h);
+
+void initGenes(int m, genes &g, haplotype &dad, haplotype &mom);
 
 
 class Individual
@@ -39,63 +55,63 @@ private:
     std::vector<gamete> m_vOvules;
     std::vector<unsigned int> m_vOWeights;
     genes m_genes;
-    gamete m_gamete;
-    genotype id;
-
 
 protected:
-    typedef bool(Individual::*fptr)(Individual);
+    typedef bool(Individual::*fptr)(gamete&);
 public:
     static fptr op;
+
     Individual(int pos, int nOvules, int nMarkers)
     {
         m_nPosition = pos;
         m_nWeight = 0;
         m_vOWeights.assign(nOvules,0);
-        haplotype p0;
-        p0.assign(nMarkers,2*pos);
-        id.push_back(p0);
-        haplotype p1;
-        p1.assign(nMarkers,2*pos+1);
-        id.push_back(p1);
+        for(int i=0; i<nOvules; i++)
+            m_vOvules.emplace_back(nMarkers);
+        haplotype dad, mom;
+        dad.assign((nMarkers+1),-1);
+        mom.assign((nMarkers+1),-1);
+        initGenes(nMarkers,dad,mom);
     }
-    Individual(int pos, int nOvules, haplotype& h1, haplotype& h2)
+    Individual(int pos, int nOvules, int nMarkers, haplotype& dad, haplotype& mom)
     {
         m_nPosition = pos;
         m_nWeight = 1;
         m_vOWeights.assign(nOvules, 0);
-        m_genes.g.push_back(h1);
-        m_genes.g.push_back(h2);
-        haplotype p0;
-        p0.assign(sizeof(h1),2*pos);
-        m_genes.par.push_back(p0);
-        m_genes.gpar.push_back(p0);
-        id.push_back(p0);
-        haplotype p1;
-        p1.assign(sizeof(h2),2*pos+1);
-        m_genes.par.push_back(p1);
-        m_genes.gpar.push_back(p1);
-        id.push_back(p1);
-        m_genes.del = std::make_pair(0,0);
-
+        for(int i=0; i<nOvules; i++)
+            m_vOvules.emplace_back(nMarkers);
+        initGenes(nMarkers,dad,mom);
     }
-    void newIndividual(gamete& p1, gamete& p2)
+    void newIndividual(gamete& dad, gamete& mom, unsigned int weight)
     {
-        m_genes.g = {p1.h,p2.h};
-        m_genes.par = {p1.par,p2.par};
-        m_genes.gpar = {p1.gpar,p2.gpar};
-        m_genes.del = std::make_pair(p1.del,p2.del);
+        m_nWeight = weight;
+        m_genes.g[0].assign(dad.h.begin(),dad.h.end());
+        m_genes.g[1].assign(mom.h.begin(),mom.h.end());
+        m_genes.par[0].assign(dad.par.begin(),dad.par.end());
+        m_genes.par[1].assign(mom.par.begin(),mom.par.end());
+        m_genes.gpar.at(0) = dad.gpar;
+        m_genes.gpar.at(1) = mom.gpar;
+        m_genes.del = std::make_pair(dad.del,mom.del);
     }
 
-    static void initDomRank(unsigned int rand, int nAlleles)
+    static void initDomRank(xorshift64& rand, int nAlleles)
     {
-        dRank.assign(rand,nAlleles);
+        for(int iii = 0; iii<nAlleles; iii++)
+        {
+            dRank.push_back(rand.get_uint64());
+        }
+    }
+
+    static unsigned int getDomRank(int n)
+    {
+        return dRank.at(n);
     }
 
     static void addDomRank(unsigned int rand)
     {
         dRank.push_back(rand);
     }
+
 
     template<class A>
     static bool initialize(A &si) {
@@ -120,25 +136,32 @@ public:
     }
 
     static inline std::string getName() {return name;}
-    inline double operator()(Individual dad) {
+    inline double operator()(gamete &dad) {
         return (this->*op)(dad);
     }
 
     inline int position() {return m_nPosition;}
     inline genotype genes() {return m_genes.g;}
+    inline int dadGene(int n) {return m_genes.g[0][n];}
+    inline int momGene(int n) {return m_genes.g[1][n];}
+    inline int dadGpar(int n) {return m_genes.gpar[0][n];}
+    inline int momGpar(int n) {return m_genes.gpar[1][n];}
+    inline int dadPos() {return m_genes.gpar[0][0];}
+    inline int momPos() {return m_genes.gpar[1][0];}
     inline unsigned int weight() {return m_nWeight;}
-    inline gamete getGamete() {return m_gamete;}
-    inline int ovuleWeight(int n) {return m_vOWeights[n];}
-    inline gamete ovule(int n) {return m_vOvules[0];}
+    inline unsigned int ovuleWeight(int n) {return m_vOWeights[n];}
+    inline gamete ovule(int n) {return m_vOvules[n];}
     void setWeight(unsigned int weight) {m_nWeight = weight;}
     void setOvuleWeight(unsigned int weight, int n) {m_vOWeights[n]=weight;}
     void setOvuleGenes(gamete &pollen, int n) {m_vOvules[n]= pollen;}
-    void makeGamete(xorshift64& rand, int nMarkers);
-    bool nsi(Individual dad);
-    bool psi(Individual dad);
-    bool gsi(Individual dad);
-    bool ssi(Individual dad);
-    bool bsi(Individual dad);
+    gamete makeGamete(xorshift64& rand, int nMarkers);
+    void initGenes(int m, haplotype &dad, haplotype &mom);
+    void clearOvuleWeight(int nOvules);
+    bool nsi(gamete &dad);
+    bool psi(gamete &dad);
+    bool gsi(gamete &dad);
+    bool ssi(gamete &dad);
+    bool bsi(gamete &dad);
 
 };
 

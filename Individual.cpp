@@ -3,45 +3,51 @@
 using namespace std;
 
 
+void printGenotype(haplotype &h)
+{
+    for(int i=0; i<h.size(); i++)
+        cout << h.at(i) << ",";
+    cout << endl;
+}
 
-bool Individual::nsi(Individual dad)
+bool Individual::nsi(gamete &dad)
 {
     return true;
 }
 
-bool Individual::psi(Individual dad)
+bool Individual::psi(gamete &dad)
 {
-    if (m_nPosition == dad.position())
+    if (m_nPosition == dad.par[0])
         return false;
     return true;
 }
 
-bool Individual::gsi(Individual dad)
+bool Individual::gsi(gamete &dad)
 {
-    if (m_genes.g[0][0] == dad.getGamete().h[0])
+    if (m_genes.g[0][0] == dad.h[0])
         return false;
-    if (m_genes.g[1][0] == dad.getGamete().h[0])
+    if (m_genes.g[1][0] == dad.h[0])
         return false;
     return true;
 }
 
-bool Individual::ssi(Individual dad)
+bool Individual::ssi(gamete &dad)
 {
-    if (m_genes.g[0][0] == dad.genes()[0][0])
+    if (m_genes.g[0][0] == dad.s.first)
         return false;
-    if (m_genes.g[1][0] == dad.genes()[0][0])
+    if (m_genes.g[1][0] == dad.s.first)
         return false;
-    if (m_genes.g[0][0] == dad.genes()[1][0])
+    if (m_genes.g[0][0] == dad.s.second)
         return false;
-    if (m_genes.g[1][0] == dad.genes()[1][0])
+    if (m_genes.g[1][0] == dad.s.second)
         return false;
     return true;
 
 }
 
-bool Individual::bsi(Individual dad)
+bool Individual::bsi(gamete &dad)
 {
-    int dominant = (dRank.at(dad.genes()[0][0])>dRank.at(dad.genes()[1][0])) ? dad.genes()[0][0] : dad.genes()[1][0];
+    int dominant = max(getDomRank(dad.s.first), getDomRank(dad.s.second));
     if (m_genes.g[0][0] == dominant)
         return false;
     if (m_genes.g[1][0] == dominant)
@@ -49,38 +55,54 @@ bool Individual::bsi(Individual dad)
     return true;
 }
 
-void Individual::makeGamete(xorshift64& rand, int nMarkers)
+gamete Individual::makeGamete(xorshift64& rand, int m)
 {
-    gamete gam;
-    int m = nMarkers + 1;
     unsigned int r = rand.get_uint32();
     unsigned int h0 = r & 1;
     unsigned int h1 = (h0+1)&1;
     r >>= 1;
-    int p = 0;
-    while (r & 1 && m > 0)
+    int p = m+1;
+    while ((r & 1) && (p >= 1))
     {
         r >>= 1;
-        ++p;
-        --m;
+        --p;
     }
 
-    gam.h.assign(m_genes.g[h0].begin(),m_genes.g[h0].end()-p);
-    gam.par.assign(id[h0].begin(),id[h0].end()-p);
-    gam.gpar.assign(m_genes.par[h0].begin(),m_genes.par[h0].end()-p);
-    if(p>0)
-        {
-            gam.h.insert(gam.h.end(),m_genes.g[h1].begin()+p, m_genes.g[h1].end());
-            gam.par.insert(gam.par.end(),id[h1].begin()+p, id[h1].end());
-            gam.gpar.insert(gam.par.end(),m_genes.par[h1].begin()+p, m_genes.par[h1].end());
-        }
-    r>>= 1;
-    gam.del = (r&1) ? m_genes.del.first : m_genes.del.second;
-    m_gamete = gam;
+    gamete g;
+    g.h.assign(m_genes.g.at(h0).begin(),(m_genes.g.at(h0).begin()+p));
+    g.gpar.assign(m_genes.par.at(h0).begin(),m_genes.par.at(h0).begin()+p);
+    g.par.assign((m+1),m_nPosition);
+
+    if(p<m+1)
+    {
+        g.h.insert(g.h.end(),m_genes.g.at(h1).begin()+p, m_genes.g.at(h1).end());
+        g.gpar.insert(g.gpar.end(),m_genes.par.at(h1).begin()+p, m_genes.par.at(h1).end());
+    }
+    g.del = (r&1) ? m_genes.del.first : m_genes.del.second;
+    g.s = make_pair(m_genes.g.at(h0).front(), m_genes.g.at(h1).front());
+    return g;
 }
 
+void Individual::initGenes(int m, haplotype &dad, haplotype &mom)
+{
+    m_genes.g.push_back(dad);
+    m_genes.g.push_back(mom);
+    haplotype h;
+    h.assign((m+1),-1);
+    for(int i=0; i<2; ++i)
+    {
+        m_genes.par.push_back(h);
+        m_genes.gpar.push_back(h);
+    }
+    m_genes.del = std::make_pair(0,0);
+}
+
+void Individual::clearOvuleWeight(int nOvules)
+{
+    m_vOWeights.assign(nOvules, 0);
+}
 
 dominance Individual::dRank;
 string Individual::name;
-typedef bool(Individual::*fptr)(Individual);
+typedef bool(Individual::*fptr)(gamete&);
 fptr Individual::op;

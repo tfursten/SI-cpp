@@ -39,7 +39,6 @@ private:
     double m_pSMut;
     int m_nMutCount;
 	int m_nSample;
-	int m_nTransPos;
 	xorshift64 m_myrand;
 	Dispersal dist;
 	std::ofstream & mout;
@@ -58,6 +57,7 @@ private:
 	void seedDispersal(int mom);
 	void samplePop(int gen);
 	void mutate(gamete &g);
+	void mutCountDec();
 
 public:
     Population(std::ofstream &o): mout(o) {};

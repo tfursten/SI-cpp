@@ -50,13 +50,12 @@ void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int n
     m_nOvule = nOvule;
     m_nMarkers = nMarkers;
     m_nIndividuals = nMaxX * nMaxY;
-    int m_nSalleles = 0;
-    int m_nAlleles = 0;
+    m_nSalleles = 0;
+    m_nAlleles = 0;
     ostringstream out;
     dist.initialize(dist_name);
     Individual::initialize(si);
-    Individual::initDomRank(m_myrand.get_uint64(),2*m_nIndividuals);
-    cout << "I am here" << endl;
+    Individual::initDomRank(m_myrand,2*m_nIndividuals);
 
     // Initialize Population: each individual has unique allele
     for(int iii=0; iii<m_nIndividuals; iii++)
@@ -70,16 +69,14 @@ void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int n
             h0.push_back(m_nAlleles++);
             h1.push_back(m_nAlleles++);
         }
-        h0.push_back(0);
-        h1.push_back(0);
-        m_vPop1.emplace_back(iii,m_nOvule,h0,h1);
-        m_vPop1.emplace_back(iii,m_nOvule,m_nMarkers);
+
+        m_vPop1.emplace_back(iii,m_nOvule,m_nMarkers,h0,h1);
+        m_vPop2.emplace_back(iii,m_nOvule,m_nMarkers);
     }
 
     out << "Dispersal distribution set to " << dist.getName() << ".\n";
     out << "Self-Incompatibility set to " << Individual::getName() << ".\n";
     cout << out.str();
-    mout << out.str() << "#" << endl;
 
 }
 
@@ -89,11 +86,12 @@ void Population::param(float dSigmaP, float dSigmaS, double dSMut, double dMMut,
     if (seed==0) {
         seed = create_random_seed();
         mout << "Using Generated PRNG Seed: "<< seed << endl;
+        cout << "Seed " << seed << endl;
     }
     m_myrand.seed(seed);
     m_dSigmaP = dSigmaP;
     m_dSigmaS = dSigmaS;
-    m_pMut = -log(1-(pow(1-dMMut, m_nMarkers)*(1-dSMut)*(1-dDMut)));
+    m_pMut = -log((pow(1-dMMut, m_nMarkers))*(1-dSMut)*(1-dDMut));
     double totmut =  dDMut + dSMut + m_nMarkers*dMMut;
     m_pDMut = dDMut/totmut;
     m_pSMut = dSMut/totmut;
@@ -101,8 +99,16 @@ void Population::param(float dSigmaP, float dSigmaS, double dSMut, double dMMut,
 }
 
 void Population::setMutCount() {
+
     m_nMutCount = floor(rand_exp(m_myrand, m_pMut));
 }
+
+void Population::mutCountDec() {
+    if (--m_nMutCount > 0)
+        return;
+    setMutCount();
+}
+
 
 void Population::mutate(gamete &g)
 {
@@ -111,14 +117,21 @@ void Population::mutate(gamete &g)
     setMutCount();
     double rand = m_myrand.get_double52();
     if (rand < m_pDMut)
+        {
         g.del = 1;
-    if (rand < m_pSMut)
+        return;
+        }
+    if ((rand < (m_pSMut+m_pDMut)) && (rand >= m_pDMut))
         {
         g.h.front() = m_nSalleles++;
         Individual::addDomRank(m_myrand.get_uint64());
+        return;
         }
-    else
-        g.h.at(1+m_myrand.get_uint(m_nMarkers)) = m_nAlleles++; //make sure this doesn't affect last marker
+    if (rand >= (m_pSMut+m_pDMut))
+        {
+        g.h.at(1+m_myrand.get_uint(m_nMarkers)) = m_nAlleles++;
+        return;
+        }
 }
 
 void Population::evolve(int nBurnIn, int nGenerations, int nSample)
@@ -126,6 +139,7 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
     //run burn-in period
     for(int ggg=0;ggg<nBurnIn;++ggg)
     {
+        cout << "burn " << ggg << endl;
         for(int dad=0; dad<m_nIndividuals;dad++)
             pollenDispersal(dad);
         for(int mom=0; mom<m_nIndividuals;mom++)
@@ -136,6 +150,7 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
 
     for(int ggg=0;ggg<nGenerations;++ggg)
     {
+        cout << "gen"<< ggg << endl;
         for(int dad=0; dad<m_nIndividuals;dad++)
             pollenDispersal(dad);
         for(int mom=0; mom<m_nIndividuals;mom++)
@@ -161,9 +176,10 @@ int Population::disperse(int x, int y, double sigma)
 
 void Population::pollenDispersal(int dad)
 {
+
     Individual dadHere = m_vPop1.at(dad);
     if(dadHere.weight() == 0)
-    	return;
+        return;
     position xy = i2xy(dad,m_nMaxX,m_nMaxY);
     int nX = xy.first;
     int nY = xy.second;
@@ -171,23 +187,26 @@ void Population::pollenDispersal(int dad)
     {
         int nNewCell = disperse(nX,nY, m_dSigmaP);
         if (nNewCell == -1)
+        {
+            mutCountDec();
             continue;
+        }
         Individual &momHere = m_vPop1[nNewCell];
         if (momHere.weight() == 0)
+        {
+            mutCountDec();
             continue;
-        dadHere.makeGamete(m_myrand, m_nMarkers);
-        gamete pollen = dadHere.getGamete();
+        }
+        gamete pollen = dadHere.makeGamete(m_myrand,m_nMarkers);
         mutate(pollen);
-        if(!(momHere(dadHere))) //check compatibility
+        if(!(momHere(pollen))) //check compatibility
             continue;
         unsigned int nPollenWeight = m_myrand.get_uint32();
         int ovule = m_myrand.get_uint(m_nOvule);
-        cout << ovule << "ovule" << endl;
         if (nPollenWeight < momHere.ovuleWeight(ovule))
             continue;
         momHere.setOvuleWeight(nPollenWeight,ovule);
         momHere.setOvuleGenes(pollen,ovule);
-
     }
 }
 
@@ -195,7 +214,10 @@ void Population::seedDispersal(int mom)
 {
     Individual &momHere = m_vPop1[mom];
     if(momHere.weight() == 0)
+    {
+        momHere.clearOvuleWeight(m_nOvule);
         return;
+    }
     momHere.setWeight(0);
     position xy = i2xy(mom,m_nMaxX,m_nMaxY);
     int nX = xy.first;
@@ -203,38 +225,113 @@ void Population::seedDispersal(int mom)
     for (int seed=0; seed < m_nOvule; seed++)
     {
         if (momHere.ovuleWeight(seed)==0)
+        {
+            mutCountDec();
             continue;
-        momHere.setOvuleWeight(seed,0);
+        }
+        momHere.setOvuleWeight(0,seed);
         int nNewCell = disperse(nX,nY, m_dSigmaS);
         if (nNewCell == -1)
+        {
+            mutCountDec();
             continue;
+        }
         unsigned int nSeedWeight = m_myrand.get_uint32();
         if (nSeedWeight < m_vPop2[nNewCell].weight())
+        {
+            mutCountDec();
             continue;
+        }
         gamete pollen = momHere.ovule(seed);
-        momHere.makeGamete(m_myrand, m_nMarkers);
-        gamete ovule = momHere.getGamete();
+        gamete ovule = momHere.makeGamete(m_myrand,m_nMarkers);
         mutate(ovule);
         if (ovule.del==1 && pollen.del==1)
-            continue;
-        m_vPop2[nNewCell].newIndividual(pollen,ovule);
-
+            {
+                continue;
+            }
+        m_vPop2[nNewCell].newIndividual(pollen,ovule,nSeedWeight);
     }
 }
 
 
-double minEuclideanDist2(int i, int j, int mx, int my) {
+double euclideanDist2(int i, int j, int mx, int my) {
 	auto xy1 = i2xy(i,mx,my);
 	auto xy2 = i2xy(j,mx,my);
-	double dx = abs(1.0*(xy1.first - xy2.first));
-	double dy = abs(1.0*(xy1.second - xy2.second));
-	dx = (dx < mx*0.5) ? dx : mx-dx;
-	dy = (dy < my*0.5) ? dy : my-dy;
+	double dx = xy1.first - xy2.first;
+	double dy = xy1.second - xy2.second;
 	return (dx*dx+dy*dy);
+}
+
+
+struct popstats {
+    typedef map<int,int> alleledb;
+	alleledb num_allele;
+	size_t num_homo;
+	size_t num_ibd;
+	size_t sum_dist2;
+
+	popstats() : num_allele(), num_homo(0), num_ibd(0), sum_dist2(0)
+		{ }
+};
+
+template<typename T>
+inline T sq(const T& t) {
+	return t*t;
 }
 
 void Population::samplePop(int gen)
 {
+    return;
+    /*
+    cout << "start sample" << endl;
+    double M = 2.0*m_nIndividuals; //smaller sample??
+    double s2 = 0.0;
+    for(int m = 0; m < m_nMarkers+1; ++m)
+    {
+        popstats stats;
+
+        for(int i=0; i<m_nIndividuals; i++)
+        {
+            position xy = i2xy(i, m_nMaxX, m_nMaxY);
+            int dX = xy.first;
+            int dY = xy.second;
+            Individual &I = m_vPop2[i];
+            stats.num_allele[I.dadGene(m)] += 1;
+            stats.num_allele[I.momGene(m)] += 1;
+            if(I.dadGene(m) == I.momGene(m))
+                stats.num_homo += 1;
+            if(I.dadGpar(m) == I.momGpar(m))
+                stats.num_ibd += 1;
+            if(m == 0)
+            {
+                stats.sum_dist2 += euclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
+                stats.sum_dist2 += euclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
+            }
+        }
+
+
+        int dt = 0;
+        BOOST_FOREACH(popstats::alleledb::value_type &vv, stats.num_allele){
+            df += sq(vv.second);
+        }
+        if(m==0)
+            s2 = 0.5*stats.sum_dist2/M;
+        double ibd = stats.num_ibd/(1.0*m_nIndividuals);
+        double hibd = stats.num_homo/(1.0*m_nIndividuals);
+        double f = dt/sq(M);
+        double Ke = 1.0/f;
+        double theta_ke = Ke-1.0;
+        double N_ke = 0.25*theta_ke/m_pMut;
+        double Nb_ke =*M_PI*s2*N_ke/(m_nMaxX*m_nMaxY);
+        cout << join("\t", gen, m, ibd, hibd, Ko, s2)
+             << "\t" << join("\t", theta_ke, N_ke, Nb_ke)
+             << endl;
+    */
+
+}
+
+
+/*
     vector<int> vIBD(1+m_nMaxY/2,0);
     vector<int> vN(1+m_nMaxY/2,0);
     typedef map<int,int> mapType;
@@ -243,7 +340,6 @@ void Population::samplePop(int gen)
     double dSigma2 = 0.0;
     double ko = 0.0;
     double ke = 0.0;
-/*
     int i0 = m_nTransPos * m_nMaxY;
     for(int i = i0; i < i0+m_nMaxY; ++i) {
     	Individual ind = m_vPop2[i];
@@ -284,6 +380,6 @@ void Population::samplePop(int gen)
     }
     mout << "sigma2: " << dSigma2/(2.0*szSample) << endl << endl;
 */
-}
+
 
 
