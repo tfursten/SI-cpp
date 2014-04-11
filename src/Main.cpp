@@ -35,7 +35,7 @@ int main(int ac, char** av)
         ("sigmaS,r", po::value<double>(&dSigmaS)->default_value(2.0), "Set dispersal parameter for seed")
         ("burn,b", po::value<int>(&nBurnIn)->default_value(0),"Set Burn-in Period")
         ("sample,t", po::value<int>(&nSample)->default_value(1),"Sample every n generations after burn-in")
-        ("output_file,f", po::value<string>(&outfileName)->default_value(string("data.txt")),"Output File Name")
+        ("output_file,f", po::value<string>(&outfileName)->default_value(string("data")),"Output File Name")
         ("seed", po::value<unsigned int>(&seed)->default_value(0), "Set PRNG seed")
         ("si,s", po::value<string>(&si)->default_value("nsi"), "Set self-incompatibility system")
         ;
@@ -112,7 +112,6 @@ int main(int ac, char** av)
 
         if (seed)
             out << "User set PRNG seed to: " << seed << ".\n";
-        cout << "Data saved to: " << outfileName << endl;
 
     }
 
@@ -122,13 +121,19 @@ int main(int ac, char** av)
         return 1;
     }
 
-    ofstream fout;
-    fout.open(outfileName.c_str());
-    fout << out.str();
+    string datafile = outfileName+".txt";
+    string paramfile = outfileName+"_settings.txt";
+    cout << "Data saved to: " << datafile << endl;
+    cout << "Parameters saved to: " << paramfile << endl;
+    ofstream pout;
+    ofstream dout;
+    pout.open(paramfile);
+    dout.open(datafile);
+    pout << out.str();
     cout << out.str();
     //Initialize Population
 
-    Population pop(fout);
+    Population pop(pout, dout);
     pop.initialize(nMaxX,nMaxY,nPollen,nOvule, nMarkers, si, dist_name);
     pop.param(dSigmaP, dSigmaS, dSMut, dMMut, dDMut, seed);
     //Run Simulation

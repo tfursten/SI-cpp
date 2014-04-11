@@ -28,7 +28,7 @@ typedef pair<int,int> position;
 
 inline position i2xy(int i, int mx, int my)
 {
-    assert(0 <= i && i < mx*my);
+    assert((0 <= i) && (i < mx*my));
     return make_pair((i/my),(i%my));
 }
 
@@ -77,6 +77,7 @@ void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int n
     out << "Dispersal distribution set to " << dist.getName() << ".\n";
     out << "Self-Incompatibility set to " << Individual::getName() << ".\n";
     cout << out.str();
+    pout << out.str();
 
 }
 
@@ -85,7 +86,7 @@ void Population::param(float dSigmaP, float dSigmaS, double dSMut, double dMMut,
     //set Random seed
     if (seed==0) {
         seed = create_random_seed();
-        mout << "Using Generated PRNG Seed: "<< seed << endl;
+        pout << "Using Generated PRNG Seed: "<< seed << endl;
         cout << "Seed " << seed << endl;
     }
     m_myrand.seed(seed);
@@ -147,7 +148,7 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
         std::swap(m_vPop1,m_vPop2);
     }
 
-
+    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke" << endl;
     for(int ggg=0;ggg<nGenerations;++ggg)
     {
         cout << "gen"<< ggg << endl;
@@ -155,8 +156,8 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
             pollenDispersal(dad);
         for(int mom=0; mom<m_nIndividuals;mom++)
             seedDispersal(mom);
-        //if (ggg % nSample == 0)
-            //samplePop(ggg);
+        if (ggg % nSample == 0)
+            samplePop(ggg);
         std::swap(m_vPop1,m_vPop2);
     }
 }
@@ -279,23 +280,23 @@ inline T sq(const T& t) {
 	return t*t;
 }
 
+
+
 void Population::samplePop(int gen)
 {
-    return;
-    /*
-    cout << "start sample" << endl;
     double M = 2.0*m_nIndividuals; //smaller sample??
     double s2 = 0.0;
     for(int m = 0; m < m_nMarkers+1; ++m)
     {
         popstats stats;
-
         for(int i=0; i<m_nIndividuals; i++)
         {
+            Individual &I = m_vPop2[i];
+            if(I.weight()== 0)
+                continue;
             position xy = i2xy(i, m_nMaxX, m_nMaxY);
             int dX = xy.first;
             int dY = xy.second;
-            Individual &I = m_vPop2[i];
             stats.num_allele[I.dadGene(m)] += 1;
             stats.num_allele[I.momGene(m)] += 1;
             if(I.dadGene(m) == I.momGene(m))
@@ -309,11 +310,11 @@ void Population::samplePop(int gen)
             }
         }
 
-
         int dt = 0;
-        BOOST_FOREACH(popstats::alleledb::value_type &vv, stats.num_allele){
-            df += sq(vv.second);
+        foreach(popstats::alleledb::value_type &vv, stats.num_allele){
+            dt += sq(vv.second);
         }
+
         if(m==0)
             s2 = 0.5*stats.sum_dist2/M;
         double ibd = stats.num_ibd/(1.0*m_nIndividuals);
@@ -322,64 +323,17 @@ void Population::samplePop(int gen)
         double Ke = 1.0/f;
         double theta_ke = Ke-1.0;
         double N_ke = 0.25*theta_ke/m_pMut;
-        double Nb_ke =*M_PI*s2*N_ke/(m_nMaxX*m_nMaxY);
-        cout << join("\t", gen, m, ibd, hibd, Ko, s2)
-             << "\t" << join("\t", theta_ke, N_ke, Nb_ke)
-             << endl;
-    */
+        double Nb_ke = 4.0*M_PI*s2*N_ke/(m_nMaxX*m_nMaxY);
+        double Ko = (double)stats.num_allele.size();
+        string t = "\t";
+        dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke<<t<<Nb_ke<<endl;
 
+    }
 }
 
 
-/*
-    vector<int> vIBD(1+m_nMaxY/2,0);
-    vector<int> vN(1+m_nMaxY/2,0);
-    typedef map<int,int> mapType;
-    mapType alleleMap;
-    int szSample = 0;
-    double dSigma2 = 0.0;
-    double ko = 0.0;
-    double ke = 0.0;
-    int i0 = m_nTransPos * m_nMaxY;
-    for(int i = i0; i < i0+m_nMaxY; ++i) {
-    	Individual ind = m_vPop2[i];
-        if(ind.weight() == 0)
-    		continue;
-    	szSample += 1;
-    	alleleMap[ind.nAllele] += 1;
-    	int p = ind.nParent_id;
-    	dSigma2 += minEuclideanDist2(i,p,m_nMaxX,m_nMaxY);
 
-    	for(int j=i; j < i0+m_nMaxY; ++j) {
-    		if(m_vPop2[j].nWeight == 0)
-    			continue;
-    		int k = j-i;
-    		k = (k <= m_nMaxY/2) ? k : m_nMaxY-k;
-       		if(ind.nAllele == m_vPop2[j].nAllele) {
-    			vIBD[k] += 1;
-    		}
-    		vN[k] += 1;
-    	}
-    }
-    int df = 0;
-    BOOST_FOREACH(mapType::value_type & vv, alleleMap){
-            df += vv.second*vv.second;
-        }
-    ko = (double)alleleMap.size();
-    double f = df/(double)(szSample*szSample);
-    ke = 1.0/f;
-    cout << "Ko: " << ko << " Ke: " << ke << endl;
 
-    mout << "pIBD Gen " << gen << ": " << endl << "nIBD: \t";
-    for(unsigned int k=0; k<vIBD.size();++k) {
-        mout << vIBD[k] << ((k< vIBD.size()-1) ? "\t" : "\n");
-    }
-    mout << "Total: \t";
-    for(unsigned int k=0; k< vN.size(); ++k) {
-        mout << vN[k] << ((k < vN.size()-1 ? "\t" : "\n"));
-    }
-    mout << "sigma2: " << dSigma2/(2.0*szSample) << endl << endl;
-*/
 
 
 
