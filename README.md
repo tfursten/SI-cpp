@@ -16,20 +16,20 @@ Compiling from Source Code
 --------------------------
 SI-cpp requires [CMake 2.8](http://www.cmake.org/) to build from source. 
 
-1. Download the source code.
-2. Decompress the tar-bzip archive
+1. Download the source code.  
+2. Decompress the tar-bzip archive  
   ```
   tar xvzf SI-cpp-*.tar.bz2
   ```
-3. Change to the build directory.
+3. Change to the build directory.  
   ```
   cd SI-cpp-*/build
   ```
-4. Run the CMake build system.
+4. Run the CMake build system.  
   ```
   cmake ..
   ```
-5.Compile
+5.Compile  
   ```
   make
   ```
