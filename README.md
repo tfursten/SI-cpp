@@ -29,7 +29,7 @@ SI-cpp requires [CMake 2.8](http://www.cmake.org/) to build from source.
   ```
   cmake ..
   ```  
-5.Compile  
+5. Compile  
   ```
   make
   ```
