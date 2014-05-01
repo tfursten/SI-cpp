@@ -141,7 +141,6 @@ public:
     }
 
     inline int position() {return m_nPosition;}
-    //inline genotype genes() {return m_genes.g;}
     inline int dadGene(int n) {return m_genes.g[0][n];}
     inline int momGene(int n) {return m_genes.g[1][n];}
     inline int dadGpar(int n) {return m_genes.gpar[0][n];}
