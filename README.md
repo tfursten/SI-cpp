@@ -28,7 +28,7 @@ SI-cpp requires [CMake 2.8](http://www.cmake.org/) to build from source.
 4. Run the CMake build system.  
   ```
   cmake ..
-  ```
+  ```  
 5.Compile  
   ```
   make
