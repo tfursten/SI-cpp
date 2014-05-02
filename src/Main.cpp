@@ -29,7 +29,7 @@ int main(int ac, char** av)
         ("markers,n", po::value<int>(&nMarkers)->default_value(3), "Set number of markers")
         ("smut,u", po::value<double>(&dSMut)->default_value(0.00001), "Set S locus mutation rate")
         ("mmut,m", po::value<double>(&dMMut)->default_value(0.00001), "Set marker mutation rate")
-        ("dmut, d", po::value<double>(&dDMut)->default_value(0.0001), "Set deleterious mutation rate for unlinked locus")
+        ("dmut", po::value<double>(&dDMut)->default_value(0.0001), "Set deleterious mutation rate for unlinked locus")
         ("distribution,d", po::value<string>(&dist_name)->default_value("exponential"), "Set Dispersal Distribution")
         ("sigmaP,q", po::value<double>(&dSigmaP)->default_value(2.0), "Set dispersal parameter for pollen")
         ("sigmaS,r", po::value<double>(&dSigmaS)->default_value(2.0), "Set dispersal parameter for seed")
@@ -67,7 +67,6 @@ int main(int ac, char** av)
             cout << visible << "\n";
             return 0;
         }
-
 
         if (!infile.empty())
         {
