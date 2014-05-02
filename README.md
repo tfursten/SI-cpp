@@ -2,7 +2,7 @@ SI-cpp
 ======
 Self-Incompatibility Simulation (c++ version)
 
-A spatially explicit individual-based model of diploid plant population that reproduce according to five different models of self-incompatibility.
+A spatially explicit individual-based model of a diploid plant population that reproduces according to five different models of self-incompatibility.
 
 Author
 ------
@@ -10,7 +10,7 @@ Tara Furstenau
 Biodesign Institute  
 Center for Evolutionary Medicine and Informatics  
 Arizona State University  
-[Website](http://tfursten@github.io)  
+[Website](http://tfursten.github.io)  
 
 Compiling from Source Code
 --------------------------
