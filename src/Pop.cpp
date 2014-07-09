@@ -55,18 +55,19 @@ void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int n
     ostringstream out;
     m_dSigmaP = dSigmaP;
     m_dSigmaS = dSigmaS;
-    pdisk.initialize((double)(2.0*m_dSigmaP));
-    sdisk.initialize((double)(2.0*m_dSigmaS));
+    out << "Dispersal distribution set to ";
     if (dist_name != "disk"){
         dist.initialize(dist_name);
         pDisperse = &Population::pDisperseDist;
         sDisperse = &Population::sDisperseDist;
-        out << "Dispersal distribution set to " << dist.getName() << ".\n";
+        out << dist.getName() << ".\n";
     }
     else{
+        pdisk.initialize((double)(2.0*m_dSigmaP));
+        sdisk.initialize((double)(2.0*m_dSigmaS));
         pDisperse = &Population::pDisperseDisk;
         sDisperse = &Population::sDisperseDisk;
-        out << "Dispersal distribution set to " << "Disk" << ".\n";
+        out << "Disk" << ".\n";
     }
 
     Individual::initialize(si);
