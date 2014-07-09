@@ -16,6 +16,7 @@
 #include "rexp.h"
 #include "disperse.h"
 #include "Individual.h"
+#include "disk.h"
 
 
 #define foreach BOOST_FOREACH
@@ -42,19 +43,30 @@ private:
     int m_nMutCount;
 	xorshift64 m_myrand;
 	Dispersal dist;
+	Disk pdisk;
+	Disk sdisk;
 	std::ofstream & pout;
 	std::ofstream & dout;
 	std::vector<Individual> m_vPop1;
 	std::vector<Individual> m_vPop2;
 	std::vector<unsigned int> m_vWeights1;
 	std::vector<unsigned int> m_vWeights2;
+
 	void setMutCount();
 	int disperse(int x, int y, double sigma);
+	int sDisperseDist(int x, int y);
+	int pDisperseDist(int x, int y);
+	int sDisperseDisk(int x, int y);
+	int pDisperseDisk(int x, int y);
 	void pollenDispersal(int dad);
 	void seedDispersal(int mom);
 	void samplePop(int gen);
 	void mutate(gamete &g);
 	void mutCountDec();
+
+protected:
+    int(Population::*pDisperse)(int,int);
+    int(Population::*sDisperse)(int,int);
 
 public:
     Population(std::ofstream &p, std::ofstream &d): pout(p), dout(d) {};
@@ -65,5 +77,6 @@ public:
 
 typedef std::vector<int> haplotype;
 typedef std::vector<haplotype> genotype;
+typedef std::pair<int,int> xycoord;
 
 #endif // POP_H_INCLUDED

@@ -61,7 +61,7 @@ inline double rand_abs_normal(xorshift64 &rng, double mu, double sigma) {
 		// use the top 8 high bits for b
 		uint64_t b = u >> 56;
 		// use the rest for a
-		int64_t a = static_cast<int64_t>((u << 8) | UINT64_C(0x7FFFFFFFFFFFFFFF));
+		int64_t a = static_cast<int64_t>((u << 8) & UINT64_C(0x7FFFFFFFFFFFFFFF));
 		double aa = static_cast<double>(a);
 
 		x = aa * wtab[b]; //abs of aa ??

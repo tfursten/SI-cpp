@@ -53,7 +53,19 @@ void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int n
     m_nSalleles = 0;
     m_nAlleles = 0;
     ostringstream out;
-    dist.initialize(dist_name);
+
+    if (dist_name != "disk"){
+        dist.initialize(dist_name);
+        pDisperse = &Population::pDisperseDist;
+        sDisperse = &Population::sDisperseDist;
+        out << "Dispersal distribution set to " << dist.getName() << ".\n";
+    }
+    else{
+        pDisperse = &Population::pDisperseDisk;
+        sDisperse = &Population::sDisperseDisk;
+        out << "Dispersal distribution set to " << "Disk" << ".\n";
+    }
+
     Individual::initialize(si);
     Individual::initDomRank(m_myrand,2*m_nIndividuals);
 
@@ -74,7 +86,7 @@ void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int n
         m_vPop2.emplace_back(iii,m_nOvule,m_nMarkers);
     }
 
-    out << "Dispersal distribution set to " << dist.getName() << ".\n";
+
     out << "Self-Incompatibility set to " << Individual::getName() << ".\n";
     cout << out.str();
     pout << out.str();
@@ -92,6 +104,8 @@ void Population::param(float dSigmaP, float dSigmaS, double dSMut, double dMMut,
     m_myrand.seed(seed);
     m_dSigmaP = dSigmaP;
     m_dSigmaS = dSigmaS;
+    pdisk.initialize(2*(double)m_dSigmaP);
+    sdisk.initialize(2*(double)m_dSigmaS);
     m_pMut = -log((pow(1-dMMut, m_nMarkers))*(1-dSMut)*(1-dDMut));
     double totmut =  dDMut + dSMut + m_nMarkers*dMMut;
     m_pDMut = dDMut/totmut;
@@ -163,7 +177,6 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
 }
 
 
-
 int Population::disperse(int x, int y, double sigma)
 {
     double a = m_myrand.get_double52() * 2.0 * M_PI;
@@ -174,6 +187,27 @@ int Population::disperse(int x, int y, double sigma)
         return xy2i(dX,dY,m_nMaxX, m_nMaxY);
     return -1;
 }
+
+int Population::sDisperseDist(int x, int y)
+{
+    return disperse(x,y,m_dSigmaS);
+}
+
+int Population::pDisperseDist(int x, int y)
+{
+    return disperse(x,y,m_dSigmaP);
+}
+
+int Population::sDisperseDisk(int x, int y)
+{
+    return sdisk.disperse(x,y,m_myrand.get_uint64(),m_nMaxX,m_nMaxY);
+}
+
+int Population::pDisperseDisk(int x, int y)
+{
+    return pdisk.disperse(x,y,m_myrand.get_uint64(),m_nMaxX,m_nMaxY);
+}
+
 
 void Population::pollenDispersal(int dad)
 {
@@ -186,7 +220,7 @@ void Population::pollenDispersal(int dad)
     int nY = xy.second;
     for (int p=0; p < m_nPollen; p++)
     {
-        int nNewCell = disperse(nX,nY, m_dSigmaP);
+        int nNewCell = (this->*pDisperse)(nX, nY);
         if (nNewCell == -1)
         {
             mutCountDec();
@@ -231,7 +265,7 @@ void Population::seedDispersal(int mom)
             continue;
         }
         momHere.setOvuleWeight(0,seed);
-        int nNewCell = disperse(nX,nY, m_dSigmaS);
+        int nNewCell = (this->*sDisperse)(nX, nY);
         if (nNewCell == -1)
         {
             mutCountDec();
