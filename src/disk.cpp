@@ -1,6 +1,10 @@
 #include "disk.h"
 
-
+inline int xy2i(int x, int y, int mx, int my){
+assert(0 <= x && x < mx);
+	assert(0 <= y && y < my);
+	return x*my+y;
+}
 void Disk::initialize(double r)
 {
     radius = r;
@@ -119,7 +123,7 @@ void Disk::makeTables(){
     makeAliasTable();
 }
 
-int Disk::disperse(int x, int y, uint64_t u, int &maxX, int &maxY){
+int Disk::disperse(int x, int y, uint64_t u, int maxX, int maxY){
     xyCoord xy = coordVec[xyTable(u)];
     x += xy.first;
     y += xy.second;

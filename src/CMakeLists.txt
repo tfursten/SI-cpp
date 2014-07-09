@@ -19,10 +19,10 @@ ENDIF(Boost_FOUND)
 
 ADD_EXECUTABLE(si
   Main.cpp Pop.cpp
-  rexp.cpp rnormal.cpp disperse.cpp Individual.cpp
+  rexp.cpp rnormal.cpp disperse.cpp Individual.cpp disk.cpp
   Main.h Pop.h disperse.h Individual.h
   xorshift64.h
-  rexp.h rnormal.h
+  rexp.h rnormal.h disk.h aliastable.h
 )
 
 TARGET_LINK_LIBRARIES(si ${Boost_LIBRARIES})

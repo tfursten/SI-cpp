@@ -42,7 +42,7 @@ inline int xy2i(position xy, int mx, int my) {
 	return xy2i(xy.first,xy.second,mx,my);
 }
 
-void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int nMarkers, string si, string dist_name)
+void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int nMarkers,float dSigmaP, float dSigmaS,  string si, string dist_name)
 {
     m_nMaxX = nMaxX;
     m_nMaxY = nMaxY;
@@ -53,7 +53,10 @@ void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int n
     m_nSalleles = 0;
     m_nAlleles = 0;
     ostringstream out;
-
+    m_dSigmaP = dSigmaP;
+    m_dSigmaS = dSigmaS;
+    pdisk.initialize((double)(2.0*m_dSigmaP));
+    sdisk.initialize((double)(2.0*m_dSigmaS));
     if (dist_name != "disk"){
         dist.initialize(dist_name);
         pDisperse = &Population::pDisperseDist;
@@ -93,7 +96,7 @@ void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int n
 
 }
 
-void Population::param(float dSigmaP, float dSigmaS, double dSMut, double dMMut, double dDMut, unsigned int seed)
+void Population::param(double dSMut, double dMMut, double dDMut, unsigned int seed)
 {
     //set Random seed
     if (seed==0) {
@@ -102,10 +105,6 @@ void Population::param(float dSigmaP, float dSigmaS, double dSMut, double dMMut,
         cout << "Seed " << seed << endl;
     }
     m_myrand.seed(seed);
-    m_dSigmaP = dSigmaP;
-    m_dSigmaS = dSigmaS;
-    pdisk.initialize(2*(double)m_dSigmaP);
-    sdisk.initialize(2*(double)m_dSigmaS);
     m_pMut = -log((pow(1-dMMut, m_nMarkers))*(1-dSMut)*(1-dDMut));
     double totmut =  dDMut + dSMut + m_nMarkers*dMMut;
     m_pDMut = dDMut/totmut;

@@ -11,7 +11,7 @@ using namespace std;
 typedef pair<int,int> xyCoord;
 typedef map<xyCoord, double> pMap;
 
-inline int xy2i(int x, int y, int mx, int my);
+
 
 class Disk
 {
@@ -45,7 +45,7 @@ public:
     void initialize(double r);
     void makeTables();
     void printTables();
-    int disperse(int x, int y, uint64_t u, int &maxX, int &maxY);
+    int disperse(int x, int y, uint64_t u, int maxX, int maxY);
 
 };
 

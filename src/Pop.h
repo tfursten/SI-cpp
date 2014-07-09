@@ -70,8 +70,8 @@ protected:
 
 public:
     Population(std::ofstream &p, std::ofstream &d): pout(p), dout(d) {};
-    void initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int nMarkers, std::string si, std::string dist_name);
-    void param(float dSigmaP, float dSigmaS, double dSMut, double dMMut, double dDMut, unsigned int seed);
+    void initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int nMarkers, float dSigmaP, float dSigmaS,std::string si, std::string dist_name);
+    void param(double dSMut, double dMMut, double dDMut, unsigned int seed);
 	void evolve(int nGenerations, int nBurnIn, int nSample);
 };
 

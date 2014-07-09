@@ -133,8 +133,8 @@ int main(int ac, char** av)
     //Initialize Population
 
     Population pop(pout, dout);
-    pop.initialize(nMaxX,nMaxY,nPollen,nOvule, nMarkers, si, dist_name);
-    pop.param(dSigmaP, dSigmaS, dSMut, dMMut, dDMut, seed);
+    pop.initialize(nMaxX,nMaxY,nPollen,nOvule, nMarkers,dSigmaP, dSigmaS, si, dist_name);
+    pop.param(dSMut, dMMut, dDMut, seed);
     //Run Simulation
     pop.evolve(nBurnIn, nGenerations, nSample);
 
