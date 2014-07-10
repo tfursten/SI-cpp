@@ -154,7 +154,6 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
     //run burn-in period
     for(int ggg=0;ggg<nBurnIn;++ggg)
     {
-        cout << "burn " << ggg << endl;
         for(int dad=0; dad<m_nIndividuals;dad++)
             pollenDispersal(dad);
         for(int mom=0; mom<m_nIndividuals;mom++)
@@ -165,7 +164,6 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
     dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke" << endl;
     for(int ggg=0;ggg<nGenerations;++ggg)
     {
-        cout << "gen"<< ggg << endl;
         for(int dad=0; dad<m_nIndividuals;dad++)
             pollenDispersal(dad);
         for(int mom=0; mom<m_nIndividuals;mom++)

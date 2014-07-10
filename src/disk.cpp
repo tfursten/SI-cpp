@@ -2,7 +2,7 @@
 
 inline int xy2i(int x, int y, int mx, int my){
 assert(0 <= x && x < mx);
-	assert(0 <= y && y < my);
+assert(0 <= y && y < my);
 	return x*my+y;
 }
 void Disk::initialize(double r)
