@@ -7,20 +7,20 @@ using namespace std;
 // random seed generator
 inline unsigned int create_random_seed() {
 	unsigned int v;
-	ifstream urandom("/dev/urandom", ios::in|ios::binary);
-	if(urandom.good()) {
-		urandom >> v;
-	} else {
-		v = static_cast<unsigned int>(getpid());
-		v += ((v << 15) + (v >> 3)) + 0x6ba658b3; // Spread 5-decimal PID over 32-bit number
-		v^=(v<<17);
-		v^=(v>>13);
-		v^=(v<<5);
-		v += static_cast<unsigned int>(time(NULL));
-		v^=(v<<17);
-		v^=(v>>13);
-		v^=(v<<5);
-	}
+	//ifstream urandom("/dev/urandom", ios::in|ios::binary);
+	//if(urandom.good()) {
+		//urandom >> v;
+	//} else {
+	v = static_cast<unsigned int>(getpid());
+	v += ((v << 15) + (v >> 3)) + 0x6ba658b3; // Spread 5-decimal PID over 32-bit number
+	v^=(v<<17);
+	v^=(v>>13);
+	v^=(v<<5);
+	v += static_cast<unsigned int>(time(NULL));
+	v^=(v<<17);
+	v^=(v>>13);
+	v^=(v<<5);
+	//}
     return (v == 0) ? 0x6a27d958 : (v & 0x7FFFFFFF); // return at most a 31-bit seed
 }
 
@@ -314,21 +314,25 @@ inline T sq(const T& t) {
 
 
 
+
+
+
 void Population::samplePop(int gen)
 {
-    double M = 2.0*m_nIndividuals; //smaller sample??
+    int sampleSz = (m_nIndividuals*0.2);
+    double M = 2.0*sampleSz;
     double s2 = 0.0;
     for(int m = 0; m < m_nMarkers+1; ++m)
     {
         popstats stats;
-        for(int i=0; i<m_nIndividuals; i++)
+        for(int i=(m_nIndividuals*0.5); i<(m_nIndividuals+sampleSz); i++)
         {
             Individual &I = m_vPop2[i];
             if(I.weight()== 0)
                 continue;
-            position xy = i2xy(i, m_nMaxX, m_nMaxY);
-            int dX = xy.first;
-            int dY = xy.second;
+            //position xy = i2xy(i, m_nMaxX, m_nMaxY);
+            //int dX = xy.first;
+            //int dY = xy.second;
             stats.num_allele[I.dadGene(m)] += 1;
             stats.num_allele[I.momGene(m)] += 1;
             if(I.dadGene(m) == I.momGene(m))
