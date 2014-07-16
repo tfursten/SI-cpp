@@ -1,10 +1,5 @@
 #include "disk.h"
 
-inline int xy2i(int x, int y, int mx, int my){
-assert(0 <= x && x < mx);
-assert(0 <= y && y < my);
-	return x*my+y;
-}
 void Disk::initialize(double r)
 {
     radius = r;
@@ -12,9 +7,12 @@ void Disk::initialize(double r)
     halfRsq = rSq/2.0;
     getCellRange();
     vecDim = cellRange.size()-1;
-    m_maxX = getMaxX();
+    maxX = getMaxX();
     totalArea = M_PI*rSq;
-    makeTables();
+    cout << "radius: " << r << endl;
+    cout << "dim: " << vecDim << endl;
+    cout << "MaxX: " << maxX << endl;
+    cout << "Total Area: " << totalArea << endl;
 
 }
 
@@ -65,6 +63,8 @@ int Disk::getBin(double x){
 
 void Disk::areas(double x1, double x2, int i){
     double A = integrate(x1,x2);
+    cout << "X1,X2: " << x1 << " " << x2 << endl;
+    cout << "A: " << A << endl;
     for (int y = 0; y<vecDim; y++){
         double y1 = cellRange[y];
         double y2 = cellRange[y+1];
@@ -85,8 +85,19 @@ void Disk::getAreas(int i){
     double x2 = cellRange[i+1];
     double fx1 = circle(x1);
     double fx2 = circle(x2);
+    cout <<"Start:"<< x1 << " " << x2 << endl;
     if(getBin(fx1) != getBin(fx2)){
-        x2 = circle(cellRange[vecDim - getBin(fx2)]);
+        cout << "INSIDE" << endl;
+        cout << "bin1: " << getBin(fx1) << endl;
+        cout << "bin2: " << getBin(fx2) << endl;
+        cout << "vecDim: " << vecDim << endl;
+        cout << cellRange[getBin(fx1)] << endl;
+        cout << "CellRange: " ;
+        for(int i=0; i<=vecDim; i++)
+            cout << cellRange[i] << " ";
+        cout << endl;
+        x2 = circle(cellRange[getBin(fx1)]);
+        cout << "X2 AFter: " << x2 << endl;
         areas(x1,x2,i);
         x1 = x2;
         x2 = cellRange[i+1];
@@ -100,9 +111,9 @@ void Disk::getAreas(int i){
 
 
 void Disk::makeTables(){
-    for(int i=0; i<m_maxX; i++)
+    for(int i=0; i<maxX; i++)
         getAreas(i);
-    for(int x=m_maxX; x<vecDim; x++){
+    for(int x=maxX; x<vecDim; x++){
         for(int y=0; y<vecDim; y++){
             if (probMap.count(make_pair(y,x)))
                 probMap[make_pair(x,y)] = probMap[make_pair(y,x)];
@@ -123,16 +134,9 @@ void Disk::makeTables(){
     makeAliasTable();
 }
 
-int Disk::disperse(int x, int y, uint64_t u, int maxX, int maxY){
-    xyCoord xy = coordVec[xyTable(u)];
-    x += xy.first;
-    y += xy.second;
-    if (x>=0 && x < maxX && y >= 0 && y < maxY)
-        return xy2i(x,y,maxX,maxY);
-    return -1;
-
+xyCoord Disk::disperse(uint64_t u){
+    return coordVec[xyTable(u)];
 }
-
 
 void Disk::makeVectors(){
     for (map<pair<int,int>,double>::iterator it = probMap.begin(); it != probMap.end(); ++it){

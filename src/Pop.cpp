@@ -179,8 +179,8 @@ int Population::disperse(int x, int y, double sigma)
 {
     double a = m_myrand.get_double52() * 2.0 * M_PI;
     double r = dist(m_myrand,sigma);
-    double dX = static_cast<int>(floor(r*cos(a)+x+0.5));
-    double dY = static_cast<int>(floor(r*sin(a)+y+0.5));
+    double dX = floor(r*cos(a)+x+0.5);
+    double dY = floor(r*sin(a)+y+0.5);
     if (dX >= 0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
         return xy2i(dX,dY,m_nMaxX, m_nMaxY);
     return -1;
