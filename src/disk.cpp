@@ -9,10 +9,7 @@ void Disk::initialize(double r)
     vecDim = cellRange.size()-1;
     m_maxX = getMaxX();
     totalArea = M_PI*rSq;
-    cout << "radius: " << r << endl;
-    cout << "dim: " << vecDim << endl;
-    cout << "MaxX: " << m_maxX << endl;
-    cout << "Total Area: " << totalArea << endl;
+    makeTables();
 
 }
 
@@ -63,8 +60,6 @@ int Disk::getBin(double x){
 
 void Disk::areas(double x1, double x2, int i){
     double A = integrate(x1,x2);
-    cout << "X1,X2: " << x1 << " " << x2 << endl;
-    cout << "A: " << A << endl;
     for (int y = 0; y<vecDim; y++){
         double y1 = cellRange[y];
         double y2 = cellRange[y+1];
@@ -85,19 +80,8 @@ void Disk::getAreas(int i){
     double x2 = cellRange[i+1];
     double fx1 = circle(x1);
     double fx2 = circle(x2);
-    cout <<"Start:"<< x1 << " " << x2 << endl;
     if(getBin(fx1) != getBin(fx2)){
-        cout << "INSIDE" << endl;
-        cout << "bin1: " << getBin(fx1) << endl;
-        cout << "bin2: " << getBin(fx2) << endl;
-        cout << "vecDim: " << vecDim << endl;
-        cout << cellRange[getBin(fx1)] << endl;
-        cout << "CellRange: " ;
-        for(int i=0; i<=vecDim; i++)
-            cout << cellRange[i] << " ";
-        cout << endl;
         x2 = circle(cellRange[getBin(fx1)]);
-        cout << "X2 AFter: " << x2 << endl;
         areas(x1,x2,i);
         x1 = x2;
         x2 = cellRange[i+1];
