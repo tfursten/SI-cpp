@@ -45,7 +45,7 @@ public:
     void initialize(double r);
     void makeTables();
     void printTables();
-    int disperse(uint64_t u);
+    xyCoord disperse(uint64_t u);
 
 };
 

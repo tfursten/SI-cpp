@@ -7,11 +7,11 @@ void Disk::initialize(double r)
     halfRsq = rSq/2.0;
     getCellRange();
     vecDim = cellRange.size()-1;
-    maxX = getMaxX();
+    m_maxX = getMaxX();
     totalArea = M_PI*rSq;
     cout << "radius: " << r << endl;
     cout << "dim: " << vecDim << endl;
-    cout << "MaxX: " << maxX << endl;
+    cout << "MaxX: " << m_maxX << endl;
     cout << "Total Area: " << totalArea << endl;
 
 }
@@ -111,9 +111,9 @@ void Disk::getAreas(int i){
 
 
 void Disk::makeTables(){
-    for(int i=0; i<maxX; i++)
+    for(int i=0; i<m_maxX; i++)
         getAreas(i);
-    for(int x=maxX; x<vecDim; x++){
+    for(int x=m_maxX; x<vecDim; x++){
         for(int y=0; y<vecDim; y++){
             if (probMap.count(make_pair(y,x)))
                 probMap[make_pair(x,y)] = probMap[make_pair(y,x)];
