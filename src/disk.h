@@ -45,7 +45,7 @@ public:
     void initialize(double r);
     void makeTables();
     void printTables();
-    int disperse(int x, int y, uint64_t u, int maxX, int maxY);
+    int disperse(uint64_t u);
 
 };
 
