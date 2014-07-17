@@ -37,6 +37,8 @@ SI-cpp requires [CMake 2.8](http://www.cmake.org/) to build from source.
 Dependencies
 -------------
 The Boost c++ Library is required for compilation and usage.
+* Foreach
+* Program Options
 
 Run
 ----
