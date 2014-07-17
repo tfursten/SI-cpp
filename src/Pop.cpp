@@ -339,7 +339,6 @@ void Population::samplePop(int gen)
         popstats stats;
         for(int i=(m_nIndividuals*0.5); i<(m_nIndividuals*0.5+sampleSz); i++)
         {
-            cout << i << endl;
             Individual &I = m_vPop2[i];
             if(I.weight()== 0)
                 continue;
