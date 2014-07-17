@@ -7,7 +7,7 @@
 
 
 
-typedef std::vector<int> haplotype;
+typedef std::vector<unsigned int> haplotype;
 typedef std::vector<haplotype> genotype;
 typedef std::vector<unsigned int> dominance;
 
@@ -28,7 +28,7 @@ struct gamete
     haplotype par;
     haplotype gpar;
     int del;
-    std::pair<int,int> s;
+    std::pair<unsigned int,unsigned int> s;
     gamete(){}
     gamete(int m)
     {
@@ -36,7 +36,7 @@ struct gamete
         par.assign((m+1),-1);
         gpar.assign((m+1),-1);
         del = 0;
-        s = std::make_pair(-1,-1);
+        s = std::make_pair(0,0);
     }
 };
 void printGenotype(haplotype &h);
@@ -50,7 +50,7 @@ class Individual
 private:
     static std::string name;
     static dominance dRank;
-    int m_nPosition;
+    unsigned int m_nPosition;
     unsigned int m_nWeight;
     std::vector<gamete> m_vOvules;
     std::vector<unsigned int> m_vOWeights;
@@ -61,7 +61,7 @@ protected:
 public:
     static fptr op;
 
-    Individual(int pos, int nOvules, int nMarkers)
+    Individual(unsigned int pos, int nOvules, int nMarkers)
     {
         m_nPosition = pos;
         m_nWeight = 0;

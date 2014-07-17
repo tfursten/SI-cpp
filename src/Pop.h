@@ -75,7 +75,7 @@ public:
 	void evolve(int nGenerations, int nBurnIn, int nSample);
 };
 
-typedef std::vector<int> haplotype;
+typedef std::vector<unsigned int> haplotype;
 typedef std::vector<haplotype> genotype;
 typedef std::pair<int,int> xycoord;
 

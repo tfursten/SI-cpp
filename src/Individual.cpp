@@ -5,7 +5,7 @@ using namespace std;
 
 void printGenotype(haplotype &h)
 {
-    for(int i=0; i<h.size(); i++)
+    for(unsigned int i=0; i<h.size(); i++)
         cout << h.at(i) << ",";
     cout << endl;
 }
