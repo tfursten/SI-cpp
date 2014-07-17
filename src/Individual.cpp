@@ -33,6 +33,7 @@ bool Individual::gsi(gamete &dad)
 
 bool Individual::ssi(gamete &dad)
 {
+    cout << "SSI" << endl;
     if (m_genes.g[0][0] == dad.s.first)
         return false;
     if (m_genes.g[1][0] == dad.s.first)
@@ -47,7 +48,10 @@ bool Individual::ssi(gamete &dad)
 
 bool Individual::bsi(gamete &dad)
 {
-    int dominant = max(getDomRank(dad.s.first), getDomRank(dad.s.second));
+    //cout << "BSI" << endl;
+    //cout << getDomRank(dad.s.first) << " " << getDomRank(dad.s.second) << endl;
+    unsigned int dominant = max(getDomRank(dad.s.first), getDomRank(dad.s.second));
+    //cout << dominant << endl;
     if (m_genes.g[0][0] == dominant)
         return false;
     if (m_genes.g[1][0] == dominant)

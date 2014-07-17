@@ -329,14 +329,17 @@ inline T sq(const T& t) {
 
 void Population::samplePop(int gen)
 {
+    if (gen == 0)
+        return;
     int sampleSz = (m_nIndividuals*0.2);
     double M = 2.0*sampleSz;
     double s2 = 0.0;
     for(int m = 0; m < m_nMarkers+1; ++m)
     {
         popstats stats;
-        for(int i=(m_nIndividuals*0.5); i<(m_nIndividuals+sampleSz); i++)
+        for(int i=(m_nIndividuals*0.5); i<(m_nIndividuals*0.5+sampleSz); i++)
         {
+            cout << i << endl;
             Individual &I = m_vPop2[i];
             if(I.weight()== 0)
                 continue;
@@ -363,8 +366,8 @@ void Population::samplePop(int gen)
 
         if(m==0)
             s2 = 0.5*stats.sum_dist2/M;
-        double ibd = stats.num_ibd/(1.0*m_nIndividuals);
-        double hibd = stats.num_homo/(1.0*m_nIndividuals);
+        double ibd = stats.num_ibd/(1.0*sampleSz);
+        double hibd = stats.num_homo/(1.0*sampleSz);
         double f = dt/sq(M);
         double Ke = 1.0/f;
         double theta_ke = Ke-1.0;
