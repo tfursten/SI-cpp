@@ -33,7 +33,6 @@ bool Individual::gsi(gamete &dad)
 
 bool Individual::ssi(gamete &dad)
 {
-    cout << "SSI" << endl;
     if (m_genes.g[0][0] == dad.s.first)
         return false;
     if (m_genes.g[1][0] == dad.s.first)
