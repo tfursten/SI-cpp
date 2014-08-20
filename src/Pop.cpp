@@ -201,7 +201,7 @@ int Population::sDisperseDisk(int x, int y)
     position dXY = sdisk.disperse(m_myrand.get_uint64());
     double dX = x+dXY.first;
     double dY = y+dXY.second;
-    if (x>=0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
+    if (dX>=0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
         return xy2i(dX,dY,m_nMaxX, m_nMaxY);
     return -1;
 }
@@ -211,7 +211,7 @@ int Population::pDisperseDisk(int x, int y)
     position dXY = pdisk.disperse(m_myrand.get_uint64());
     double dX = x+dXY.first;
     double dY = y+dXY.second;
-    if (x>=0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
+    if (dX>=0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
         return xy2i(dX,dY,m_nMaxX, m_nMaxY);
     return -1;
 }
