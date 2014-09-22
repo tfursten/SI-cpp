@@ -35,11 +35,13 @@ private:
     int m_nIndividuals;
     int m_nSalleles;
     int m_nAlleles;
+    int m_nLethal; //number of abortions
     double m_dSigmaP;
     double m_dSigmaS;
 	double m_pMut;
     double m_pDMut;
     double m_pSMut;
+    double m_pDel;
     int m_nMutCount;
 	xorshift64 m_myrand;
 	Dispersal dist;
@@ -58,6 +60,8 @@ private:
 	int pDisperseDist(int x, int y);
 	int sDisperseDisk(int x, int y);
 	int pDisperseDisk(int x, int y);
+	int periodic(int x, int y);
+	int absorbing(int x, int y);
 	void pollenDispersal(int dad);
 	void seedDispersal(int mom);
 	void samplePop(int gen);
@@ -67,11 +71,12 @@ private:
 protected:
     int(Population::*pDisperse)(int,int);
     int(Population::*sDisperse)(int,int);
+    int(Population::*newXY)(int,int);
 
 public:
     Population(std::ofstream &p, std::ofstream &d): pout(p), dout(d) {};
-    void initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int nMarkers, float dSigmaP, float dSigmaS,std::string si, std::string dist_name);
-    void param(double dSMut, double dMMut, double dDMut, unsigned int seed);
+    void initialize(int nMaxX, int nMaxY, std::string bound, int nPollen, int nOvule, int nMarkers, float dSigmaP, float dSigmaS,std::string si, std::string dist_name);
+    void param(double dSMut, double dMMut, double dDMut, double dPdel, unsigned int seed);
 	void evolve(int nGenerations, int nBurnIn, int nSample);
 };
 

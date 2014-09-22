@@ -8,8 +8,8 @@ int main(int ac, char** av)
 
     static int nGenerations, nMaxX, nMaxY, nPollen, nOvule, nMarkers, nBurnIn, nSample;
     unsigned int seed;
-    static double dSMut, dMMut, dDMut, dSigmaP, dSigmaS;
-    string dist_name, si, infile, outfileName;
+    static double dSMut, dMMut, dDMut, dSigmaP, dSigmaS, dPdel;
+    string bound, dist_name, si, infile, outfileName;
 
     ostringstream out;
     try
@@ -23,12 +23,14 @@ int main(int ac, char** av)
         config.add_options()
         ("maxX,x", po::value<int>(&nMaxX)->default_value(100),"Set X dimension")
         ("maxY,y", po::value<int>(&nMaxY)->default_value(100),"Set Y dimension")
+        ("landscape", po::value<string>(&bound)->default_value("torus"),"Set landscape boundary (torus or rectangle)")
         ("generations,g", po::value<int>(&nGenerations)->default_value(10), "Set number of Generations to run after burn-in")
         ("pollen,p", po::value<int>(&nPollen)->default_value(10), "Set number of pollen produced per individual")
         ("ovule,o", po::value<int>(&nOvule)->default_value(10), "Set number of ovules per individual")
         ("markers,n", po::value<int>(&nMarkers)->default_value(3), "Set number of markers")
         ("smut,u", po::value<double>(&dSMut)->default_value(0.00001), "Set S locus mutation rate")
         ("mmut,m", po::value<double>(&dMMut)->default_value(0.00001), "Set marker mutation rate")
+        ("pdel", po::value<double>(&dPdel)->default_value(1.0),"Set deleterious threshold")
         ("dmut", po::value<double>(&dDMut)->default_value(0.0001), "Set deleterious mutation rate for unlinked locus")
         ("distribution,d", po::value<string>(&dist_name)->default_value("disk"), "Set Dispersal Distribution")
         ("sigmaP,q", po::value<double>(&dSigmaP)->default_value(2.0), "Set dispersal parameter for pollen")
@@ -133,8 +135,8 @@ int main(int ac, char** av)
     //Initialize Population
     clock_t start = clock();
     Population pop(pout, dout);
-    pop.initialize(nMaxX,nMaxY,nPollen,nOvule, nMarkers,dSigmaP, dSigmaS, si, dist_name);
-    pop.param(dSMut, dMMut, dDMut, seed);
+    pop.initialize(nMaxX,nMaxY,bound,nPollen,nOvule, nMarkers,dSigmaP, dSigmaS, si, dist_name);
+    pop.param(dSMut, dMMut, dDMut,dPdel, seed);
     //Run Simulation
     pop.evolve(nBurnIn, nGenerations, nSample);
 

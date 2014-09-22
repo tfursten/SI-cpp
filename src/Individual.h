@@ -143,6 +143,8 @@ public:
     inline int position() {return m_nPosition;}
     inline int dadGene(int n) {return m_genes.g[0][n];}
     inline int momGene(int n) {return m_genes.g[1][n];}
+    inline int dadDel(){return m_genes.del.first;}
+    inline int momDel(){return m_genes.del.second;}
     inline int dadGpar(int n) {return m_genes.gpar[0][n];}
     inline int momGpar(int n) {return m_genes.gpar[1][n];}
     inline int dadPos() {return m_genes.gpar[0][0];}

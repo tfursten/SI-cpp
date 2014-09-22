@@ -28,7 +28,7 @@ typedef pair<int,int> position;
 
 inline position i2xy(int i, int mx, int my)
 {
-    assert((0 <= i) && (i < mx*my));
+    assert(0 <= i && i < mx*my);
     return make_pair((i/my),(i%my));
 }
 
@@ -42,7 +42,7 @@ inline int xy2i(position xy, int mx, int my) {
 	return xy2i(xy.first,xy.second,mx,my);
 }
 
-void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int nMarkers,float dSigmaP, float dSigmaS,  string si, string dist_name)
+void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen, int nOvule, int nMarkers,float dSigmaP, float dSigmaS,  string si, string dist_name)
 {
     m_nMaxX = nMaxX;
     m_nMaxY = nMaxY;
@@ -68,6 +68,15 @@ void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int n
         pDisperse = &Population::pDisperseDisk;
         sDisperse = &Population::sDisperseDisk;
         out << "Disk" << ".\n";
+    }
+    out << "Landscape set to ";
+    if (bound == "torus"){
+        out << "torus" << endl;
+        newXY = &Population::periodic;
+    }
+    else{
+        out << "rectangle" << endl;
+        newXY = &Population::absorbing;
     }
 
     Individual::initialize(si);
@@ -97,7 +106,7 @@ void Population::initialize(int nMaxX, int nMaxY, int nPollen, int nOvule, int n
 
 }
 
-void Population::param(double dSMut, double dMMut, double dDMut, unsigned int seed)
+void Population::param(double dSMut, double dMMut, double dDMut, double dPdel, unsigned int seed)
 {
     //set Random seed
     if (seed==0) {
@@ -106,6 +115,7 @@ void Population::param(double dSMut, double dMMut, double dDMut, unsigned int se
         cout << "Seed " << seed << endl;
     }
     m_myrand.seed(seed);
+    m_pDel = dPdel;
     m_pMut = -log((pow(1-dMMut, m_nMarkers))*(1-dSMut)*(1-dDMut));
     double totmut =  dDMut + dSMut + m_nMarkers*dMMut;
     m_pDMut = dDMut/totmut;
@@ -154,6 +164,7 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
     //run burn-in period
     for(int ggg=0;ggg<nBurnIn;++ggg)
     {
+        m_nLethal = 0;
         for(int dad=0; dad<m_nIndividuals;dad++)
             pollenDispersal(dad);
         for(int mom=0; mom<m_nIndividuals;mom++)
@@ -161,9 +172,10 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
         std::swap(m_vPop1,m_vPop2);
     }
 
-    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke" << endl;
+    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke\tlethal\thoDel\the\thoDom\tNobs" << endl;
     for(int ggg=0;ggg<nGenerations;++ggg)
     {
+        m_nLethal = 0;
         for(int dad=0; dad<m_nIndividuals;dad++)
             pollenDispersal(dad);
         for(int mom=0; mom<m_nIndividuals;mom++)
@@ -174,6 +186,25 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
     }
 }
 
+int wrap_around(int x, int w) {
+    return ((x % w) + w) % w;
+}
+
+
+int Population::absorbing(int x, int y)
+{
+    if (x >= 0 && x < m_nMaxX && y >= 0 && y < m_nMaxY)
+        return xy2i(x,y,m_nMaxX,m_nMaxY);
+    return -1;
+}
+int Population::periodic(int x, int y)
+{
+    int newX = wrap_around(static_cast<int>(x),m_nMaxX);
+    int newY = wrap_around(static_cast<int>(y),m_nMaxY);
+    return xy2i(newX,newY,m_nMaxX,m_nMaxY);
+}
+
+//********************Distribution Dispersal***************
 
 int Population::disperse(int x, int y, double sigma)
 {
@@ -181,9 +212,11 @@ int Population::disperse(int x, int y, double sigma)
     double r = dist(m_myrand,sigma);
     double dX = floor(r*cos(a)+x+0.5);
     double dY = floor(r*sin(a)+y+0.5);
-    if (dX >= 0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
-        return xy2i(dX,dY,m_nMaxX, m_nMaxY);
-    return -1;
+    int i = (this->*newXY)(dX,dY);//returns index based on landscape
+    return i;
+    //if (dX >= 0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
+        //return xy2i(dX,dY,m_nMaxX, m_nMaxY);
+    //return -1;
 }
 
 int Population::sDisperseDist(int x, int y)
@@ -195,15 +228,18 @@ int Population::pDisperseDist(int x, int y)
 {
     return disperse(x,y,m_dSigmaP);
 }
+//********************Disk Dispersal**********************
 
 int Population::sDisperseDisk(int x, int y)
 {
     position dXY = sdisk.disperse(m_myrand.get_uint64());
     double dX = x+dXY.first;
     double dY = y+dXY.second;
-    if (dX>=0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
-        return xy2i(dX,dY,m_nMaxX, m_nMaxY);
-    return -1;
+    int i = (this->*newXY)(dX,dY);//returns index based on landscape
+    return i;
+    //if (dX>=0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
+        //return xy2i(dX,dY,m_nMaxX, m_nMaxY);
+    //return -1;
 }
 
 int Population::pDisperseDisk(int x, int y)
@@ -211,9 +247,11 @@ int Population::pDisperseDisk(int x, int y)
     position dXY = pdisk.disperse(m_myrand.get_uint64());
     double dX = x+dXY.first;
     double dY = y+dXY.second;
-    if (dX>=0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
-        return xy2i(dX,dY,m_nMaxX, m_nMaxY);
-    return -1;
+    //if (dX>=0 && dX < m_nMaxX && dY >= 0 && dY < m_nMaxY)
+        //return xy2i(dX,dY,m_nMaxX, m_nMaxY);
+    //return -1;
+    int i = (this->*newXY)(dX,dY);//returns index based on landscape
+    return i;
 }
 
 
@@ -256,25 +294,25 @@ void Population::pollenDispersal(int dad)
 void Population::seedDispersal(int mom)
 {
     Individual &momHere = m_vPop1[mom];
-    if(momHere.weight() == 0)
+    if(momHere.weight() == 0) //No plant here
     {
-        momHere.clearOvuleWeight(m_nOvule);
+        momHere.clearOvuleWeight(m_nOvule);  //clear out ovules for next generation
         return;
     }
-    momHere.setWeight(0);
-    position xy = i2xy(mom,m_nMaxX,m_nMaxY);
+    momHere.setWeight(0); //clear out weight to mark as completed
+    position xy = i2xy(mom,m_nMaxX,m_nMaxY);  
     int nX = xy.first;
     int nY = xy.second;
     for (int seed=0; seed < m_nOvule; seed++)
     {
-        if (momHere.ovuleWeight(seed)==0)
+        if (momHere.ovuleWeight(seed)==0) //No pollen landed in this ovule
         {
-            mutCountDec();
-            continue;
+            mutCountDec();  //decrease mutation count for the female gamete
+            continue; //skip to next ovule
         }
-        momHere.setOvuleWeight(0,seed);
-        int nNewCell = (this->*sDisperse)(nX, nY);
-        if (nNewCell == -1)
+        momHere.setOvuleWeight(0,seed); //clear out weight 
+        int nNewCell = (this->*sDisperse)(nX, nY); 
+        if (nNewCell == -1) //reject if dispersal out of landscape
         {
             mutCountDec();
             continue;
@@ -288,10 +326,12 @@ void Population::seedDispersal(int mom)
         gamete pollen = momHere.ovule(seed);
         gamete ovule = momHere.makeGamete(m_myrand,m_nMarkers);
         mutate(ovule);
-        if (ovule.del==1 && pollen.del==1)
-            {
+        if (ovule.del==1 && pollen.del==1){ // check if homozygous for deleterious mutation
+            if (m_pDel == 1.0 || m_myrand.get_double52() < m_pDel){ //Check if lethal
+                m_nLethal++;
                 continue;
             }
+        }
         m_vPop2[nNewCell].newIndividual(pollen,ovule,nSeedWeight);
     }
 }
@@ -307,13 +347,15 @@ double euclideanDist2(int i, int j, int mx, int my) {
 
 
 struct popstats {
-    typedef map<int,int> alleledb;
+    typedef map<int,int> alleledb; //map allele number to counts
 	alleledb num_allele;
 	size_t num_homo;
 	size_t num_ibd;
 	size_t sum_dist2;
+    size_t num_del1; //number heterozygous for deleterious allele
+    size_t num_del2; //number homozygous for deleterious allele
 
-	popstats() : num_allele(), num_homo(0), num_ibd(0), sum_dist2(0)
+	popstats() : num_allele(), num_homo(0), num_ibd(0), sum_dist2(0), num_del1(0), num_del2(0)
 		{ }
 };
 
@@ -331,13 +373,17 @@ void Population::samplePop(int gen)
 {
     if (gen == 0)
         return;
-    int sampleSz = (m_nIndividuals*0.2);
+    int sampleSz = (m_nIndividuals*0.2); //sample 20% of individuals
+    int sStart = m_nIndividuals*0.5; //start sampling near the middle of the population landscape
+    int sEnd = sStart + sampleSz;
     double M = 2.0*sampleSz;
     double s2 = 0.0;
+    int popCount = count(m_vWeights2.begin(),m_vWeights2.end(),0);
+
     for(int m = 0; m < m_nMarkers+1; ++m)
     {
         popstats stats;
-        for(int i=(m_nIndividuals*0.5); i<(m_nIndividuals*0.5+sampleSz); i++)
+        for(int i=sStart; i<sEnd; i++)
         {
             Individual &I = m_vPop2[i];
             if(I.weight()== 0)
@@ -355,6 +401,10 @@ void Population::samplePop(int gen)
             {
                 stats.sum_dist2 += euclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
                 stats.sum_dist2 += euclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
+                if(I.dadDel()==1 && I.momDel()==1)
+                    stats.num_del2++;
+                if(I.dadDel()==1 || I.momDel()==1)
+                    stats.num_del1++;
             }
         }
 
@@ -374,7 +424,8 @@ void Population::samplePop(int gen)
         double Nb_ke = 4.0*M_PI*s2*N_ke/(m_nMaxX*m_nMaxY);
         double Ko = (double)stats.num_allele.size();
         string t = "\t";
-        dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke<<t<<Nb_ke<<endl;
+        dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<
+        stats.num_del2<<t<<stats.num_del1<<t<<sampleSz-stats.num_del2-stats.num_del1<<t<<m_nIndividuals-popCount<<endl;
 
     }
 }
