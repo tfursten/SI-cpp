@@ -60,8 +60,8 @@ private:
 	int pDisperseDist(int x, int y);
 	int sDisperseDisk(int x, int y);
 	int pDisperseDisk(int x, int y);
-	int periodic(int x, int y);
-	int absorbing(int x, int y);
+	inline int periodic(int x, int y);
+	inline int absorbing(int x, int y);
 	void pollenDispersal(int dad);
 	void seedDispersal(int mom);
 	void samplePop(int gen);

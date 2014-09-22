@@ -128,7 +128,7 @@ void Population::setMutCount() {
     m_nMutCount = floor(rand_exp(m_myrand, m_pMut));
 }
 
-void Population::mutCountDec() {
+inline void Population::mutCountDec() {
     if (--m_nMutCount > 0)
         return;
     setMutCount();
@@ -186,18 +186,18 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
     }
 }
 
-int wrap_around(int x, int w) {
+inline int wrap_around(int x, int w) {
     return ((x % w) + w) % w;
 }
 
 
-int Population::absorbing(int x, int y)
+inline int Population::absorbing(int x, int y)
 {
     if (x >= 0 && x < m_nMaxX && y >= 0 && y < m_nMaxY)
         return xy2i(x,y,m_nMaxX,m_nMaxY);
     return -1;
 }
-int Population::periodic(int x, int y)
+inline int Population::periodic(int x, int y)
 {
     int newX = wrap_around(static_cast<int>(x),m_nMaxX);
     int newY = wrap_around(static_cast<int>(y),m_nMaxY);
