@@ -403,7 +403,7 @@ void Population::samplePop(int gen)
                 stats.sum_dist2 += euclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
                 if(I.dadDel()==1 && I.momDel()==1)
                     stats.num_del2++;
-                if(I.dadDel()==1 || I.momDel()==1)
+                else if(I.dadDel()==1 || I.momDel()==1)
                     stats.num_del1++;
             }
         }
@@ -424,8 +424,8 @@ void Population::samplePop(int gen)
         double Nb_ke = 4.0*M_PI*s2*N_ke/(m_nMaxX*m_nMaxY);
         double Ko = (double)stats.num_allele.size();
         string t = "\t";
-        dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<
-        stats.num_del2<<t<<stats.num_del1<<t<<sampleSz-stats.num_del2-stats.num_del1<<t<<m_nIndividuals-popCount<<endl;
+        int hoDom = sampleSz - stats.num_del1 - stats.num_del2;
+        dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2<<t<<stats.num_del1<<t<<hoDom<<m_nIndividuals-popCount<<endl;
 
     }
 }
