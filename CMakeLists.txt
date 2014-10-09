@@ -16,6 +16,14 @@ if("${isSystemDir}" STREQUAL "-1")
    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 endif()
 
+# Use cmake -DGPROF=1 to add gnu profilier.
+if(GPROF)
+  MESSAGE("Adding (gnu) profiling to target all")
+  add_definitions(-pg)
+  set(CMAKE_EXE_LINKER_FLAGS "-pg")
+endif(GPROF)
+
+
 #### C++11 Support ####
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
