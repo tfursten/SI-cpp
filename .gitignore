@@ -13,7 +13,8 @@ Notebook.ods
 # Ignore the build directory
 build/*
 !build/.gitkeep
-
+Release/*
+Debug/*
 
 # Compiled Object files
 *.slo
