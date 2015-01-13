@@ -36,6 +36,7 @@ double Disk::getMaxX(){
         if((mX <= cellRange[i]) && (mX > cellRange[i-1]))
             return i;
     }
+    return 0;
 }
 
 pair<double,double> Disk::pol2xy(double theta)
@@ -56,6 +57,7 @@ int Disk::getBin(double x){
         if(x <= cellRange[i+1])
             return i;
     }
+    return vecDim-1;
 }
 
 void Disk::areas(double x1, double x2, int i){
