@@ -1,0 +1,29 @@
+/src/*.txt
+/src/SI.cbp
+/src/SI.depend
+/src/SI.layout
+/src/bin
+/src/obj
+/src/Config
+/src/config.py
+Data/*
+Config/*
+Notebook.ods
+# Ignore the build directory
+build/*
+!build/.gitkeep
+
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
