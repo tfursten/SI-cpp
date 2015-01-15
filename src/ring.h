@@ -1,52 +1,56 @@
-#ifndef DISK_H_INCLUDED
-#define DISK_H_INCLUDED
+#ifndef RING_H_INCLUDED
+#define RING_H_INCLUDED
 
-#include <math.h>
+#include <cmath>
 #include <vector>
 #include <map>
 #include <iostream>
 #include "aliastable.h"
 
 using namespace std;
+typedef pair<double,double> pts;
 typedef pair<int,int> xyCoord;
-typedef map<xyCoord, double> dpMap;
+typedef map<xyCoord, double> rpMap;
 
 
 
-class Disk
+class Ring
 {
 private:
     double radius;
     double rSq;
     double halfRsq;
-    dpMap probMap;
+    double pCenter;
+    rpMap probMap;
     vector<double> cellRange;
-    double m_maxX;
-    double totalArea;
+    double circum;
+    double tProb;
     int vecDim;
+    double m_maxX;
+    vector<pts> points;
     vector<xyCoord> coordVec;
     vector<double> probVec;
     alias_table xyTable;
-
-    double integrate(double x1, double x2);
+    double arclen(double x1, double x2, double y1, double y2);
     void getCellRange();
-    double getMaxX();
     pair<double,double> pol2xy(double theta);
+    pair<double,double> xy2Pol(double x, double y);
     double circle(double &x);
     int getBin(double x);
-    void getAreas(int i);
-    void areas(double x1, double x2, int i);
+    void getLength();
+    void length(double x1, double x2, double y1, double y2);
     void makeVectors();
     void makeAliasTable();
+    void getPoints();
 
 
 
 public:
-    void initialize(double r);
+    void initialize(double r, double c);
     void makeTables();
     void printTables();
     xyCoord disperse(uint64_t u);
 
 };
 
-#endif // DISK_H_INCLUDED
+#endif // RING_H_INCLUDED
