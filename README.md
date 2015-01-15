@@ -54,6 +54,8 @@ General Options:
 Configuration:
   -x [ --maxX ] arg (=100)              Set X dimension
   -y [ --maxY ] arg (=100)              Set Y dimension
+  --landscape arg (=torus)              Set landscape boundary (torus or 
+                                        rectangle)
   -g [ --generations ] arg (=10)        Set number of Generations to run after 
                                         burn-in
   -p [ --pollen ] arg (=10)             Set number of pollen produced per 
@@ -64,6 +66,7 @@ Configuration:
                                         Set S locus mutation rate
   -m [ --mmut ] arg (=1.0000000000000001e-05)
                                         Set marker mutation rate
+  --pdel arg (=1)                       Set deleterious threshold
   --dmut arg (=0.0001)                  Set deleterious mutation rate for 
                                         unlinked locus
   -d [ --distribution ] arg (=disk)     Set Dispersal Distribution
@@ -75,6 +78,10 @@ Configuration:
   -f [ --output_file ] arg (=data)      Output File Name
   --seed arg (=0)                       Set PRNG seed
   -s [ --si ] arg (=nsi)                Set self-incompatibility system
+  --pparam arg (=0)                     Extra Parameters for pollen dispersal
+  --sparam arg (=0)                     Extra Parameters for seed dispersal
+  --fast arg (=1)                       Use fast dispersal when available
+
 
 
 ```
