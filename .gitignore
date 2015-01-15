@@ -1,0 +1,36 @@
+<<<<<<< HEAD
+/src/*.txt
+/src/SI.cbp
+/src/SI.depend
+/src/SI.layout
+/src/bin
+/src/obj
+/src/Config
+/src/config.py
+Data/*
+Config/*
+Notebook.ods
+# Ignore the build directory
+build/*
+!build/.gitkeep
+Release/*
+Debug/*
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+=======
+./build/
+./debug/
+>>>>>>> 9da181f0e16df6fe24beac8c0f567eecc361a65d
+
