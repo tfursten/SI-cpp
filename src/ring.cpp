@@ -86,9 +86,6 @@ void Ring::getPoints(){
         x1 = x2;
         y1 = y2;
     }
-    cout << "pointsize: "<< points.size()<<endl;
-    for(int i=0;i<points.size();i++)
-        cout << points[i].first << " " << points[i].second << endl;
 }
 
 
@@ -98,6 +95,7 @@ int Ring::getBin(double x){
         if(x <= cellRange[i+1])
             return i;
     }
+    return 0;
 }
 
 
@@ -110,7 +108,7 @@ void Ring::length(double x1, double x2, double y1, double y2){
 }
 
 void Ring::getLength(){
-    for(int i=0; i<points.size()-1; i++){
+    for(unsigned int i=0; i<points.size()-1; i++){
         double x1 = points[i].first;
         double y1 = points[i].second;
         double x2 = points[i+1].first;

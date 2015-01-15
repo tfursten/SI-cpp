@@ -9,6 +9,8 @@ int main(int ac, char** av)
     static int nGenerations, nMaxX, nMaxY, nPollen, nOvule, nMarkers, nBurnIn, nSample;
     unsigned int seed;
     static double dSMut, dMMut, dDMut, dSigmaP, dSigmaS, dPdel;
+    static float p1, p2;
+    static bool f;
     string bound, dist_name, si, infile, outfileName;
 
     ostringstream out;
@@ -40,6 +42,9 @@ int main(int ac, char** av)
         ("output_file,f", po::value<string>(&outfileName)->default_value(string("data")),"Output File Name")
         ("seed", po::value<unsigned int>(&seed)->default_value(0), "Set PRNG seed")
         ("si,s", po::value<string>(&si)->default_value("nsi"), "Set self-incompatibility system")
+        ("pparam", po::value<float>(&p1)->default_value(0),"Extra Parameters for pollen dispersal")
+        ("sparam", po::value<float>(&p2)->default_value(0),"Extra Parameters for seed dispersal")
+        ("fast", po::value<bool>(&f)->default_value(true),"Use fast dispersal when available")
         ;
 
         po::options_description hidden("Hidden Options");
@@ -106,10 +111,14 @@ int main(int ac, char** av)
 
 
 
+
         assert(dSigmaP>0);
         assert(dSigmaS>0);
         out << "Pollen dispersal parameter set to " << dSigmaP << ".\n"
-            << "Seed dispersal parameter set to " << dSigmaS << ".\n";
+            << "Extra pollen parameter set to " << p1 << ".\n"
+            << "Seed dispersal parameter set to " << dSigmaS << ".\n"
+            << "Extra seed paramter set to " << p2 << ".\n";
+       
 
         if (seed)
             out << "User set PRNG seed to: " << seed << ".\n";
@@ -135,7 +144,7 @@ int main(int ac, char** av)
     //Initialize Population
     clock_t start = clock();
     Population pop(pout, dout);
-    pop.initialize(nMaxX,nMaxY,bound,nPollen,nOvule, nMarkers,dSigmaP, dSigmaS, si, dist_name);
+    pop.initialize(nMaxX,nMaxY,bound,nPollen,nOvule, nMarkers,dSigmaP, dSigmaS, si, dist_name, p1, p2, f);
     pop.param(dSMut, dMMut, dDMut,dPdel, seed);
     //Run Simulation
     pop.evolve(nBurnIn, nGenerations, nSample);

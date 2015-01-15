@@ -2,7 +2,7 @@
 
 
 
-void Ray::initialize(double s, double r=6.0)
+void Ray::initialize(float s, float r=6.0)
 {
     sigma = s;
     range = r;
@@ -51,7 +51,7 @@ int Ray::disperse(xorshift64& rand){
         int64_t a = static_cast<int64_t>(u<<8);
         double aa = static_cast<double>(a);
         tcount += 1;
-        double x,y;
+        double x;
         x = (xsigma + (-log(rand.get_double52())));
         x = floor(x+0.5);
         x = copysign(x,aa);

@@ -33,7 +33,7 @@ private:
 
 
 public:
-    void initialize(double s, double r);
+    void initialize(float s, float r);
     void printTables();
     int disperse(xorshift64& rand);
     void tailStats(int it);

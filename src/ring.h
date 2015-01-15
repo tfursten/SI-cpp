@@ -10,7 +10,7 @@
 using namespace std;
 typedef pair<double,double> pts;
 typedef pair<int,int> xyCoord;
-typedef map<xyCoord, double> pMap;
+typedef map<xyCoord, double> rpMap;
 
 
 
@@ -21,7 +21,7 @@ private:
     double rSq;
     double halfRsq;
     double pCenter;
-    pMap probMap;
+    rpMap probMap;
     vector<double> cellRange;
     double circum;
     double tProb;
