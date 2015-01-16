@@ -46,6 +46,7 @@ void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen, int
 {
   m_nMaxX = nMaxX;
   m_nMaxY = nMaxY;
+  m_sBound = bound;
   m_nPollen = nPollen;
   m_nOvule = nOvule;
   m_nMarkers = nMarkers;
@@ -55,11 +56,11 @@ void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen, int
   ostringstream out;
   m_dSigmaP = dSigmaP;
   m_dSigmaS = dSigmaS;
-  pDisp.initialize(dist_name, m_nMaxX, m_nMaxY, fast, bound, m_dSigmaP, pp);
-  sDisp.initialize(dist_name, m_nMaxX, m_nMaxY, fast, bound, m_dSigmaS, sp);
+  pDisp.initialize(dist_name, m_nMaxX, m_nMaxY, fast, m_sBound, m_dSigmaP, pp);
+  sDisp.initialize(dist_name, m_nMaxX, m_nMaxY, fast, m_sBound, m_dSigmaS, sp);
   out << "Pollen dispersal distribution set to " << pDisp.getName() << ".\n";
   out << "Seed dispersal distribution set to " << sDisp.getName() << ".\n";
-  out << "Landscape set to " << bound << ".\n";
+  out << "Landscape set to " << m_sBound << ".\n";
 
   Individual::initialize(si);
   Individual::initDomRank(m_myrand,2*m_nIndividuals);
@@ -299,6 +300,16 @@ double euclideanDist2(int i, int j, int mx, int my) {
 	return (dx*dx+dy*dy);
 }
 
+double minEuclideanDist2(int i, int j, int mx, int my) {
+  auto xy1 = i2xy(i,mx,my);
+  auto xy2 = i2xy(j,mx,my);
+  double dx = abs(1.0*(xy1.first - xy2.first));
+  double dy = abs(1.0*(xy1.second - xy2.second));
+  dx = (dx < mx*0.5) ? dx : mx-dx;
+  dy = (dy < my*0.5) ? dy : my-dy;
+  return (dx*dx+dy*dy);
+}
+
 
 struct popstats {
   typedef map<int,int> alleledb; //map allele number to counts
@@ -350,8 +361,14 @@ void Population::samplePop(int gen)
                 stats.num_ibd += 1;
             if(m == 0)
             {
-                stats.sum_dist2 += euclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
-                stats.sum_dist2 += euclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
+                if(m_sBound=="rectangle"){
+                  stats.sum_dist2 += euclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
+                  stats.sum_dist2 += euclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
+                }
+                else{
+                  stats.sum_dist2 += minEuclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
+                  stats.sum_dist2 += minEuclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
+                }
                 if(I.dadDel()==1 && I.momDel()==1)
                     stats.num_del2++;
                 else if(I.dadDel()==1 || I.momDel()==1)

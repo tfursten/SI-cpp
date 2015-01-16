@@ -27,8 +27,9 @@
 class Population
 {
 private:
-  int m_nMaxX;
+    int m_nMaxX;
     int m_nMaxY;
+    std::string m_sBound; 
     int m_nPollen;
     int m_nOvule;
     int m_nMarkers;

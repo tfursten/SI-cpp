@@ -42,8 +42,8 @@ int main(int ac, char** av)
         ("output_file,f", po::value<string>(&outfileName)->default_value(string("data")),"Output File Name")
         ("seed", po::value<unsigned int>(&seed)->default_value(0), "Set PRNG seed")
         ("si,s", po::value<string>(&si)->default_value("nsi"), "Set self-incompatibility system")
-        ("pparam", po::value<float>(&p1)->default_value(0),"Extra Parameters for pollen dispersal")
-        ("sparam", po::value<float>(&p2)->default_value(0),"Extra Parameters for seed dispersal")
+        ("pparam", po::value<float>(&p1)->default_value(0),"Extra Parameter for pollen dispersal")
+        ("sparam", po::value<float>(&p2)->default_value(0),"Extra Parameter for seed dispersal")
         ("fast", po::value<bool>(&f)->default_value(true),"Use fast dispersal when available")
         ;
 
