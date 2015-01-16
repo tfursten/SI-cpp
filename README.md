@@ -78,9 +78,10 @@ Configuration:
   -f [ --output_file ] arg (=data)      Output File Name
   --seed arg (=0)                       Set PRNG seed
   -s [ --si ] arg (=nsi)                Set self-incompatibility system
-  --pparam arg (=0)                     Extra Parameters for pollen dispersal
-  --sparam arg (=0)                     Extra Parameters for seed dispersal
+  --pparam arg (=0)                     Extra Parameter for pollen dispersal
+  --sparam arg (=0)                     Extra Parameter for seed dispersal
   --fast arg (=1)                       Use fast dispersal when available
+
 
 
 
