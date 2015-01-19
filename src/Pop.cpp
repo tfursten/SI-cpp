@@ -160,7 +160,7 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
         std::swap(m_vPop1,m_vPop2);
     }
 
-    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke\tlethal\thoDel\the\thoDom\tNobs" << endl;
+    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke\tlethal\thoDel\the\thoDom\tdfreq" << endl;
     for(int ggg=0;ggg<nGenerations;++ggg)
     {
         m_nLethal = 0;
@@ -319,8 +319,9 @@ struct popstats {
 	size_t sum_dist2;
   size_t num_del1; //number heterozygous for deleterious allele
   size_t num_del2; //number homozygous for deleterious allele
+  size_t del_freq; //freq of deleterious allele
 
-	popstats() : num_allele(), num_homo(0), num_ibd(0), sum_dist2(0), num_del1(0), num_del2(0)
+	popstats() : num_allele(), num_homo(0), num_ibd(0), sum_dist2(0), num_del1(0), num_del2(0), del_freq(0)
 		{ }
 };
 
@@ -369,10 +370,14 @@ void Population::samplePop(int gen)
                   stats.sum_dist2 += minEuclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
                   stats.sum_dist2 += minEuclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
                 }
-                if(I.dadDel()==1 && I.momDel()==1)
+                if(I.dadDel()==1 && I.momDel()==1){
                     stats.num_del2++;
-                else if(I.dadDel()==1 || I.momDel()==1)
+                    stats.del_freq += 2;
+                }
+                else if(I.dadDel()==1 || I.momDel()==1){
                     stats.num_del1++;
+                    stats.del_freq ++;
+                }
             }
         }
 
@@ -397,7 +402,7 @@ void Population::samplePop(int gen)
         int hoDom = sampleSz - stats.num_del1 - stats.num_del2;
 
 	// TODO: Try using fopen/fwritef, the c routines are often faster than c++
-	dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2<<t<<stats.num_del1<<t<<hoDom<<m_nIndividuals-popCount<<endl;
+	dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2<<t<<stats.num_del1<<t<<hoDom<<t<<stats.del_freq/M<<endl;
 
     }
 }
