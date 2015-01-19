@@ -66,7 +66,7 @@ Configuration:
                                         Set S locus mutation rate
   -m [ --mmut ] arg (=1.0000000000000001e-05)
                                         Set marker mutation rate
-  --pdel arg (=1)                       Set deleterious threshold
+  --pdel arg (=1)                       Set deleterious selection coefficient
   --dmut arg (=0.0001)                  Set deleterious mutation rate for 
                                         unlinked locus
   -d [ --distribution ] arg (=disk)     Set Dispersal Distribution
@@ -81,6 +81,7 @@ Configuration:
   --pparam arg (=0)                     Extra Parameter for pollen dispersal
   --sparam arg (=0)                     Extra Parameter for seed dispersal
   --fast arg (=1)                       Use fast dispersal when available
+
 
 
 
