@@ -32,7 +32,7 @@ int main(int ac, char** av)
         ("markers,n", po::value<int>(&nMarkers)->default_value(3), "Set number of markers")
         ("smut,u", po::value<double>(&dSMut)->default_value(0.00001), "Set S locus mutation rate")
         ("mmut,m", po::value<double>(&dMMut)->default_value(0.00001), "Set marker mutation rate")
-        ("pdel", po::value<double>(&dPdel)->default_value(1.0),"Set deleterious threshold")
+        ("pdel", po::value<double>(&dPdel)->default_value(1.0),"Set deleterious selection coefficient")
         ("dmut", po::value<double>(&dDMut)->default_value(0.0001), "Set deleterious mutation rate for unlinked locus")
         ("distribution,d", po::value<string>(&dist_name)->default_value("disk"), "Set Dispersal Distribution")
         ("sigmaP,q", po::value<double>(&dSigmaP)->default_value(2.0), "Set dispersal parameter for pollen")
@@ -107,7 +107,8 @@ int main(int ac, char** av)
             << "Number of markers set to " << nMarkers << ".\n"
             << "S mutation rate set to " << dSMut<< ".\n"
             << "Marker mutation rate set to " << dMMut << ".\n"
-            << "Deleterious mutation rate set to " << dDMut << ".\n";
+            << "Deleterious mutation rate set to " << dDMut << ".\n"
+            << "Selection coefficient of deleterious allele is " << dPdel << ".\n";
 
 
 
