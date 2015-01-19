@@ -160,7 +160,7 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
         std::swap(m_vPop1,m_vPop2);
     }
 
-    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke\tlethal\thoDel\the\thoDom\tdfreq" << endl;
+    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke\tlethal\thoDel\the\thoDom\tdfreq\tN" << endl;
     for(int ggg=0;ggg<nGenerations;++ggg)
     {
         m_nLethal = 0;
@@ -341,7 +341,7 @@ void Population::samplePop(int gen)
     int sEnd = sStart + sampleSz;
     double M = 2.0*sampleSz;
     double s2 = 0.0;
-    int popCount = count(m_vWeights2.begin(),m_vWeights2.end(),0);
+    int popCount = m_nIndividuals - count(m_vWeights2.begin(),m_vWeights2.end(),0);
 
     for(int m = 0; m < m_nMarkers+1; ++m)
     {
@@ -402,7 +402,7 @@ void Population::samplePop(int gen)
         int hoDom = sampleSz - stats.num_del1 - stats.num_del2;
 
 	// TODO: Try using fopen/fwritef, the c routines are often faster than c++
-	dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2<<t<<stats.num_del1<<t<<hoDom<<t<<stats.del_freq/M<<endl;
+	dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2<<t<<stats.num_del1<<t<<hoDom<<t<<stats.del_freq/M<<popCount<<endl;
 
     }
 }
