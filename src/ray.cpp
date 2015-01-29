@@ -15,6 +15,7 @@ void Ray::initialize(double s, double r)
     range = r;
     xsigma = range*sigma;
     vlen = floor(xsigma);
+    //scale up to nearest power of 2
     if(xsigma>vlen+0.5)
         vlen += 1;
     vlen = vlen*2 + 3;
@@ -63,12 +64,15 @@ void Ray::makeTables(){
 }
 
 int Ray::tail(xorshift64& rand){
-    double x;
+    double x,y,r;
+    r = xsigma/sigma;
     for(;;){
-        x = (xsigma -log(rand.get_double52()))/double(xsigma);
-        if(rand.get_double52()<exp(-0.5*(fabs(x)-xsigma)*(fabs(x)-xsigma)))
+        x = rand_exp(rand,r);
+        y = rand_exp(rand,1);
+        if(2*y > x*x)
             break;
     }
+    x = x*sigma+xsigma;
     x = floor(x+0.5);
     return int(x);
 }
