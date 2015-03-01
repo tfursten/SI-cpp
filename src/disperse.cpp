@@ -132,7 +132,7 @@ int Dispersal::cont_gamma(xorshift64&rand, int x1, int y1)
           break;
       }
 
-    d = param2 * param3 * v;
+    d = 1/param2 * param3 * v;
     if (param5 > 1)
     {
         return disperse_cont(rand, x1, y1, d);
