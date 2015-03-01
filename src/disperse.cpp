@@ -19,9 +19,19 @@ void Dispersal::set_param(std::string name, float p1, float p2)
     else if (name == "normal")
         param1 = p1 * sqrt(2.0);
     else if (name == "gamma"){
-        assert((p1 != 0) && (p2 != 0));
-        param1 = p1; //not working yet
-        param2 = p2;
+        //Currently using Marsaglia2000 methods which requires a>=1
+        assert((p1 > 0) && (p2 > 0));
+        param1 = p2; //alpha
+        param2 = sqrt((param1*(param1+1))/(2*p1*p1)); //beta adjusted so second moment equals 2sigma^2
+        assert(param2>0);
+        if(param1<1){
+            param5 = param1;
+            param1 = 1.0+param1;
+        }
+        else param5 = 2;
+        param3 = param2-(1/3.0); //d
+        param4 = (1.0/3.0)/sqrt(param3); //c
+        
     }
     //else if (name == "rectangle") //not working yet
         //assert((p2>=0) && (p3>=0) && (p4>=0));
@@ -46,6 +56,8 @@ void Dispersal::set_param(std::string name, float p1, float p2)
         param1 = p1;
 
 }
+
+
 
 void Dispersal::init_disc(std::string name)
 {
@@ -97,10 +109,41 @@ int Dispersal::cont_ring(xorshift64& rand, int x1, int y1)
         return (this->*boundary)(x1,y1);
 }
 
-int Dispersal::cont_gamma(xorshift64& rand, int x1, int y1)
+int Dispersal::cont_gamma(xorshift64&rand, int x1, int y1)
 {
-    double d = 0; //not finished
-    return disperse_cont(rand, x1, y1, d);
+    //Marsalgia and Tsang's Method
+    double x, v, u, d;
+    for(;;)
+      {
+        do
+          {
+            x = rand_normal(rand,0.0,1);
+            v = 1.0 + param4 * x;
+          }
+        while (v <= 0);
+ 
+        v = v * v * v;
+        u = rand.get_double52();
+ 
+        if (u < 1 - 0.0331 * x * x * x * x) 
+          break;
+ 
+        if (log (u) < 0.5 * x * x + param3 * (1 - v + log (v)))
+          break;
+      }
+
+    d = param2 * param3 * v;
+    if (param5 > 1)
+    {
+        return disperse_cont(rand, x1, y1, d);
+    }
+    else
+    {
+        u = rand.get_double52();
+        d = param2 * param3 * v * pow(u,1.0/param1);
+        return disperse_cont(rand, x1, y1, d);
+    }
+
 }
 
 
