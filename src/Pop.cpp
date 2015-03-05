@@ -182,6 +182,114 @@ inline int wrap_around(int x, int w) {
 }
 
 
+
+void Population::pollenDispersal(int dad)
+{
+    Individual &dadHere = m_vPop1.at(dad);
+    if(dadHere.weight() == 0)
+        return;
+     if(dadHere.dadDel() && dadHere.momDel()){
+        if (m_pDel == 1.0 || m_myrand.get_double52() < m_pDel){ //Check if sterile
+          m_nLethal++;
+          dadHere.setWeight(0);
+          return;
+        }
+    }
+    int nX = dadHere.coordX();
+    int nY = dadHere.coordY();
+    ////position xy = i2xy(dad, m_nMaxX, m_nMaxY);
+    ////int nX = xy.first;
+    ////int nY = xy.second;
+
+    for (int p=0; p < m_nPollen; p++)
+    {
+        int nNewCell = pDisp(m_myrand,nX, nY);
+        if (nNewCell == -1)
+        {
+            mutCountDec();
+            continue;
+        }
+        Individual &momHere = m_vPop1[nNewCell];
+        if (momHere.weight() == 0)
+        {
+            mutCountDec();
+            continue;
+        }
+
+        unsigned int nPollenWeight = m_myrand.get_uint32();
+        int ovule = m_myrand.get_uint(m_nOvule);
+        if (nPollenWeight < momHere.ovuleWeight(ovule)){
+          mutCountDec();
+          continue;
+        }
+        gamete *pollen = dadHere.makeGamete(m_myrand,m_nMarkers);
+        mutate(*pollen);
+        if(!(momHere(*pollen))){ //check compatibility
+          delete pollen;
+          continue;
+        }
+  
+
+  // Moved conditional prior to make gamete for efficiency
+  //unsigned int nPollenWeight = m_myrand.get_uint32();
+        //int ovule = m_myrand.get_uint(m_nOvule);
+        //if (nPollenWeight < momHere.ovuleWeight(ovule))
+  //  {
+  //    delete pollen;
+        //    continue;
+  //  }
+
+        momHere.setOvuleWeight(nPollenWeight,ovule);
+        momHere.setOvuleGenes(pollen,ovule);
+  
+    }
+}
+
+void Population::seedDispersal(int mom)
+{
+  Individual &momHere = m_vPop1[mom];
+  if(momHere.weight() == 0) //No plant here
+    {
+      momHere.clearOvuleWeight(m_nOvule);  //clear out ovules for next generation
+      return;
+    }
+  momHere.setWeight(0); //clear out weight to mark as completed
+
+  int nX = momHere.coordX();
+  int nY = momHere.coordY();
+  //position xy = i2xy(mom,m_nMaxX,m_nMaxY);  
+  //int nX = xy.first;
+  //int nY = xy.second;
+  for (int seed=0; seed < m_nOvule; seed++)
+    {
+      if (momHere.ovuleWeight(seed)==0){ //No pollen landed in this ovule
+          mutCountDec();  //decrease mutation count for the female gamete
+          continue; //skip to next ovule
+      }
+      momHere.setOvuleWeight(0, seed); //clear out weight 
+
+      int nNewCell = sDisp(m_myrand,nX, nY); 
+      if (nNewCell == -1){ //reject if dispersal out of landscape
+        mutCountDec();
+        continue;
+      }
+      unsigned int nSeedWeight = m_myrand.get_uint32();
+      if (nSeedWeight < m_vPop2[nNewCell].weight()){
+        mutCountDec();
+        continue;
+      }
+
+      gamete *pollen = momHere.ovule(seed);
+      gamete *ovule = momHere.makeGamete(m_myrand,m_nMarkers);
+      mutate(*ovule); 
+      // TODO: newIndividual should hold the reference to ovule and pollen instead
+      // of making a copy.
+      m_vPop2[nNewCell].newIndividual(pollen, ovule, nSeedWeight);
+      delete ovule; 
+    }
+}
+
+/*
 void Population::pollenDispersal(int dad)
 {
     Individual &dadHere = m_vPop1.at(dad);
@@ -290,7 +398,7 @@ void Population::seedDispersal(int mom)
     }
 }
 
-
+*/
 
 double euclideanDist2(int i, int j, int mx, int my) {
 	auto xy1 = i2xy(i,mx,my);
