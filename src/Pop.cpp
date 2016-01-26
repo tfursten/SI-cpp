@@ -449,7 +449,7 @@ void Population::samplePop(int gen)
     double M = 2.0*sampleSz;
     double s2 = 0.0;
     int popCount = m_nIndividuals - count(m_vWeights2.begin(),m_vWeights2.end(),0);
-    vector<individual> pop(m_vPop2);
+    vector<Individual> pop(m_vPop2);
     random_shuffle(pop.begin(),pop.end());
     for(int m = 0; m < m_nMarkers+1; ++m)
     {
