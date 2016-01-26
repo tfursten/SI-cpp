@@ -37,6 +37,7 @@ private:
     int m_nSalleles;
     int m_nAlleles;
     int m_nLethal; //number of abortions
+    int m_nFecundity;
     double m_dSigmaP;
     double m_dSigmaS;
     double m_pMut;

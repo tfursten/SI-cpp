@@ -160,12 +160,13 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
         std::swap(m_vPop1,m_vPop2);
     }
 
-    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke\tlethal\thoDel\the\thoDom\tdfreq\tN" << endl;
+    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke\tlethal\thoDel\the\thoDom\tdfreq\tN\tfecud" << endl;
     for(int ggg=0;ggg<nGenerations;++ggg)
     {
         m_nLethal = 0;
         for(int dad=0; dad<m_nIndividuals;dad++)
             pollenDispersal(dad);
+        m_nFecundity = 0;
         for(int mom=0; mom<m_nIndividuals;mom++)
             seedDispersal(mom);
         if (ggg % nSample == 0)
@@ -267,7 +268,7 @@ void Population::seedDispersal(int mom)
           continue; //skip to next ovule
       }
       momHere.setOvuleWeight(0, seed); //clear out weight 
-
+      m_nFecundity ++;
       int nNewCell = sDisp(m_myrand,nX, nY); 
       if (nNewCell == -1){ //reject if dispersal out of landscape
         mutCountDec();
@@ -445,18 +446,17 @@ void Population::samplePop(int gen)
     if (gen == 0)
         return;
     int sampleSz = (m_nIndividuals*0.2); //sample 20% of individuals
-    int sStart = m_nIndividuals*0.5; //start sampling near the middle of the population landscape
-    int sEnd = sStart + sampleSz;
     double M = 2.0*sampleSz;
     double s2 = 0.0;
     int popCount = m_nIndividuals - count(m_vWeights2.begin(),m_vWeights2.end(),0);
-
+    vector<individual> pop(m_vPop2);
+    random_shuffle(pop.begin(),pop.end());
     for(int m = 0; m < m_nMarkers+1; ++m)
     {
         popstats stats;
-        for(int i=sStart; i<sEnd; i++)
+        for(int i=0; i<sampleSz; i++)
         {
-            Individual &I = m_vPop2[i];
+            Individual &I = pop[i];
             if(I.weight()== 0)
                 continue;
             //position xy = i2xy(i, m_nMaxX, m_nMaxY);
@@ -510,7 +510,9 @@ void Population::samplePop(int gen)
         int hoDom = sampleSz - stats.num_del1 - stats.num_del2;
 
 	// TODO: Try using fopen/fwritef, the c routines are often faster than c++
-	dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2<<t<<stats.num_del1<<t<<hoDom<<t<<stats.del_freq/M<<popCount<<endl;
+	dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke
+  <<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2<<t<<stats.num_del1<<t<<hoDom<<t
+  <<stats.del_freq/M<<popCount<<t<<m_nFecundity<<endl;
 
     }
 }
