@@ -82,6 +82,7 @@ void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen, int
       
       m_vPop1.emplace_back(iii, m_nOvule, m_nMarkers, m_nMaxX, m_nMaxY, h0, h1);
       m_vPop2.emplace_back(iii, m_nOvule, m_nMarkers, m_nMaxX, m_nMaxY);
+      m_nPopSample.push_back(iii);
     }
 
   out << "Self-Incompatibility set to " << Individual::getName() << ".\n";
@@ -155,12 +156,13 @@ void Population::evolve(int nBurnIn, int nGenerations, int nSample)
         m_nLethal = 0;
         for(int dad=0; dad<m_nIndividuals;dad++)
             pollenDispersal(dad);
+        m_nFecundity = 0;
         for(int mom=0; mom<m_nIndividuals;mom++)
             seedDispersal(mom);
         std::swap(m_vPop1,m_vPop2);
     }
 
-    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke\tlethal\thoDel\the\thoDom\tdfreq\tN\tfecud" << endl;
+    dout << "#Gen\tm\tibd\thibd\tko\tke\ts2\tthke\tNke\tNbke\tsterile\thoDel\the\thoDom\tdfreq\tN\tfecund" << endl;
     for(int ggg=0;ggg<nGenerations;++ggg)
     {
         m_nLethal = 0;
@@ -267,8 +269,9 @@ void Population::seedDispersal(int mom)
           mutCountDec();  //decrease mutation count for the female gamete
           continue; //skip to next ovule
       }
-      momHere.setOvuleWeight(0, seed); //clear out weight 
       m_nFecundity ++;
+      momHere.setOvuleWeight(0, seed); //clear out weight 
+
       int nNewCell = sDisp(m_myrand,nX, nY); 
       if (nNewCell == -1){ //reject if dispersal out of landscape
         mutCountDec();
@@ -439,7 +442,7 @@ inline T sq(const T& t) {
 	return t*t;
 }
 
-
+/*
 
 void Population::samplePop(int gen)
 {
@@ -448,55 +451,54 @@ void Population::samplePop(int gen)
     int sampleSz = (m_nIndividuals*0.2); //sample 20% of individuals
     double M = 2.0*sampleSz;
     double s2 = 0.0;
-    int popCount = m_nIndividuals - count(m_vWeights2.begin(),m_vWeights2.end(),0);
-    vector<Individual> pop(m_vPop2);
-    random_shuffle(pop.begin(),pop.end());
-    for(int m = 0; m < m_nMarkers+1; ++m)
-    {
+    int popCount = m_nIndividuals;
+    for(int i=0; i<m_nIndividuals; i++){
+      if(m_vPop2[i].weight() == 0)
+        popCount -= 1;
+    }
+    int i = 0;
+    int sample_count = 0;
+    random_shuffle(m_nPopSample.begin(),m_nPopSample.end());
+    cout << m_nPopSample[0] << endl;
+    while(m_nPopSample.size() && sample_count < sampleSz){
+      Individual &I = m_vPop2[m_nPopSample[i]];
+      if(I.weight()==0){
+        i++;
+        continue;
+      }
+      for(int m = 0; m < m_nMarkers+1; m++){
         popstats stats;
-        for(int i=0; i<sampleSz; i++)
-        {
-            Individual &I = pop[i];
-            if(I.weight()== 0)
-                continue;
-            //position xy = i2xy(i, m_nMaxX, m_nMaxY);
-            //int dX = xy.first;
-            //int dY = xy.second;
-            stats.num_allele[I.dadGene(m)] += 1;
-            stats.num_allele[I.momGene(m)] += 1;
-            if(I.dadGene(m) == I.momGene(m))
-                stats.num_homo += 1;
-            if(I.dadGpar(m) == I.momGpar(m))
-                stats.num_ibd += 1;
-            if(m == 0)
-            {
-                if(m_sBound=="rectangle"){
-                  stats.sum_dist2 += euclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
-                  stats.sum_dist2 += euclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
-                }
-                else{
-                  stats.sum_dist2 += minEuclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
-                  stats.sum_dist2 += minEuclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
-                }
-                if(I.dadDel()==1 && I.momDel()==1){
-                    stats.num_del2++;
-                    stats.del_freq += 2;
-                }
-                else if(I.dadDel()==1 || I.momDel()==1){
-                    stats.num_del1++;
-                    stats.del_freq ++;
-                }
-            }
+        stats.num_allele[I.dadGene(m)] += 1;
+        stats.num_allele[I.momGene(m)] += 1;
+        if(I.dadGene(m) == I.momGene(m))
+          stats.num_homo += 1;
+        if(I.dadGpar(m) == I.momGpar(m))
+          stats.num_ibd += 1;
+        if(m == 0){
+          if(m_sBound == "rectangle"){
+            stats.sum_dist2 += euclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
+            stats.sum_dist2 += euclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
+          }
+          else{
+            stats.sum_dist2 += minEuclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
+            stats.sum_dist2 += minEuclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
+          }
+          if(I.dadDel()==1 && I.momDel()==1){
+            stats.num_del2++;
+            stats.del_freq += 2;
+          }
+          else if(I.dadDel()==1 || I.momDel()==1){
+            stats.num_del1++;
+            stats.del_freq ++;
+          }
         }
-
+      
         int dt = 0;
         foreach(popstats::alleledb::value_type &vv, stats.num_allele){
-            dt += sq(vv.second);
+          dt += sq(vv.second);
         }
-
         if(m==0)
-            s2 = 0.5*stats.sum_dist2/M;
-
+          s2 = 0.5*stats.sum_dist2/M;
         double ibd = stats.num_ibd/(1.0*sampleSz);
         double hibd = stats.num_homo/(1.0*sampleSz);
         double f = dt/sq(M);
@@ -509,17 +511,111 @@ void Population::samplePop(int gen)
         string t = "\t";
         int hoDom = sampleSz - stats.num_del1 - stats.num_del2;
 
-	// TODO: Try using fopen/fwritef, the c routines are often faster than c++
-	dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t<<N_ke
-  <<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2<<t<<stats.num_del1<<t<<hoDom<<t
-  <<stats.del_freq/M<<popCount<<t<<m_nFecundity<<endl;
+  // TODO: Try using fopen/fwritef, the c routines are often faster than c++
+       dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t
+        <<theta_ke<<t<<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2
+         <<t<<stats.num_del1<<t<<hoDom<<t<<stats.del_freq/M<<t<<popCount<<t<<m_nFecundity<<endl;
+      }
+      i++;
+      sample_count++;
 
     }
 }
 
+*/
 
 
+ void Population::samplePop(int gen)
+ {
+     if (gen == 0)
+         return;
+     int sampleSz = (m_nIndividuals*0.2); //sample 20% of individuals
+     double M = 2.0*sampleSz;
+     double s2 = 0.0;
+     int popCount = m_nIndividuals;
+     for(int i=0; i<m_nIndividuals; i++){
+        if(m_vPop2[i].weight() == 0)
+          popCount -= 1;
+     }
 
+     random_shuffle(m_nPopSample.begin(),m_nPopSample.end());
+     
+
+     for(int m = 0; m < m_nMarkers+1; ++m)
+     {
+         int i = 0;
+         int sample_count = 0;
+         popstats stats;
+         stats.del_freq = 0;
+         while(i<(int)(m_nPopSample.size()) && sample_count < sampleSz)
+         //for(int i=0; i<sampleSz; i++)
+         {
+             Individual &I = m_vPop2[m_nPopSample[i]];
+             if(I.weight()== 0){
+                i++;
+                continue;
+             }
+
+             int pos = I.position();
+             //position xy = i2xy(i, m_nMaxX, m_nMaxY);
+             //int dX = xy.first;
+             //int dY = xy.second;
+             stats.num_allele[I.dadGene(m)] += 1;
+             stats.num_allele[I.momGene(m)] += 1;
+             if(I.dadGene(m) == I.momGene(m))
+                 stats.num_homo += 1;
+             if(I.dadGpar(m) == I.momGpar(m))
+                 stats.num_ibd += 1;
+             if(m == 0)
+             {
+                 if(m_sBound=="rectangle"){
+                   stats.sum_dist2 += euclideanDist2(I.dadPos(),pos,m_nMaxX, m_nMaxY);
+                   stats.sum_dist2 += euclideanDist2(I.momPos(),pos,m_nMaxX, m_nMaxY);
+                 }
+                 else{
+                   stats.sum_dist2 += minEuclideanDist2(I.dadPos(),pos,m_nMaxX, m_nMaxY);
+                   stats.sum_dist2 += minEuclideanDist2(I.momPos(),pos,m_nMaxX, m_nMaxY);
+                 }
+                 if(I.dadDel()==1 && I.momDel()==1){
+                     stats.num_del2++;
+                     stats.del_freq += 2;
+                 }
+                 else if(I.dadDel()==1 || I.momDel()==1){
+                     stats.num_del1++;
+                     stats.del_freq ++;
+                 }
+             }
+             i++;
+             sample_count ++;
+         }
+ 
+         int dt = 0;
+         foreach(popstats::alleledb::value_type &vv, stats.num_allele){
+             dt += sq(vv.second);
+         }
+ 
+         if(m==0)
+             s2 = 0.5*stats.sum_dist2/M;
+ 
+         double ibd = stats.num_ibd/(1.0*sampleSz);
+         double hibd = stats.num_homo/(1.0*sampleSz);
+         double f = dt/sq(M);
+         double Ke = 1.0/f;
+ 
+         double theta_ke = Ke-1.0;
+         double N_ke = 0.25*theta_ke/m_pMut;
+         double Nb_ke = 4.0*M_PI*s2*N_ke/(m_nMaxX*m_nMaxY);
+         double Ko = (double)stats.num_allele.size();
+         string t = "\t";
+         int hoDom = sampleSz - stats.num_del1 - stats.num_del2;
+ 
+  // TODO: Try using fopen/fwritef, the c routines are often faster than c++
+  dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t<<theta_ke<<t
+  <<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2<<t<<stats.num_del1<<t
+  <<hoDom<<t<<stats.del_freq/M<<t<<popCount<<t<<m_nFecundity<<endl;
+ 
+     }
+ }
 
 
 

@@ -36,8 +36,8 @@ private:
     int m_nIndividuals;
     int m_nSalleles;
     int m_nAlleles;
-    int m_nLethal; //number of abortions
     int m_nFecundity;
+    int m_nLethal; //number of abortions
     double m_dSigmaP;
     double m_dSigmaS;
     double m_pMut;
@@ -53,9 +53,7 @@ private:
 	// TODO: See if using Individual **m_vPop1 will give better results
 	std::vector<Individual> m_vPop1;
 	std::vector<Individual> m_vPop2;
-
-	std::vector<unsigned int> m_vWeights1;
-	std::vector<unsigned int> m_vWeights2;
+    std::vector<int> m_nPopSample;
 
 	void setMutCount();
 	void pollenDispersal(int dad);
