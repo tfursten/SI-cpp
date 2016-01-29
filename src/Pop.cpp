@@ -120,7 +120,7 @@ inline void Population::mutCountDec() {
     setMutCount();
 }
 
-
+/*
 void Population::mutate(gamete &g)
 {
 
@@ -131,7 +131,7 @@ void Population::mutate(gamete &g)
     double rand = m_myrand.get_double52();
     if (rand < m_pDMut)
       {
-        g.del = 1;
+        g.del = m_nAlleles++;
         return;
       }
     if ((rand < (m_pSMut+m_pDMut)) && (rand >= m_pDMut))
@@ -143,6 +143,44 @@ void Population::mutate(gamete &g)
     if (rand >= (m_pSMut+m_pDMut))
       {
         g.h[1+m_myrand.get_uint(m_nMarkers)] = m_nAlleles++;
+        return;
+      }
+    
+}*/
+
+void Population::mutate(Individual &I)
+{
+
+    if (m_nMutCount-2 > 0){
+      m_nMutCount -= 2;
+      return;
+    }
+    bool chr = m_nMutCount == 1 ? 0 : 1;
+    setMutCount();
+    double ran = m_myrand.get_double52();
+    if (ran < m_pDMut)
+      {
+        if(chr)
+          I.setMomDel(m_nAlleles++);
+        else
+          I.setDadDel(m_nAlleles++);
+        return;
+      }
+    if ((ran < (m_pSMut+m_pDMut)) && (ran >= m_pDMut))
+      {
+        if(chr)
+          I.setMomGene(0,m_nSalleles++);
+        else
+          I.setDadGene(0,m_nSalleles++);
+        Individual::addDomRank(m_myrand.get_uint64());
+        return;
+      }
+    if (ran >= (m_pSMut+m_pDMut))
+      {
+        if(chr)
+          I.setMomGene(1+m_myrand.get_uint(m_nMarkers),m_nAlleles++);
+        else
+          I.setDadGene(1+m_myrand.get_uint(m_nMarkers),m_nAlleles++);
         return;
       }
     
@@ -191,13 +229,15 @@ void Population::pollenDispersal(int dad)
     Individual &dadHere = m_vPop1.at(dad);
     if(dadHere.weight() == 0)
         return;
-     if(dadHere.dadDel() && dadHere.momDel()){
+    if(dadHere.dadDel()!=0 && dadHere.dadDel() == dadHere.momDel()){
         if (m_pDel == 1.0 || m_myrand.get_double52() < m_pDel){ //Check if sterile
           m_nLethal++;
           dadHere.setWeight(0);
+          mutate(dadHere);
           return;
         }
     }
+    mutate(dadHere);
     int nX = dadHere.coordX();
     int nY = dadHere.coordY();
     ////position xy = i2xy(dad, m_nMaxX, m_nMaxY);
@@ -208,25 +248,16 @@ void Population::pollenDispersal(int dad)
     {
         int nNewCell = pDisp(m_myrand,nX, nY);
         if (nNewCell == -1)
-        {
-            mutCountDec();
             continue;
-        }
         Individual &momHere = m_vPop1[nNewCell];
         if (momHere.weight() == 0)
-        {
-            mutCountDec();
             continue;
-        }
-
         unsigned int nPollenWeight = m_myrand.get_uint32();
-        int ovule = m_myrand.get_uint(m_nOvule);
-        if (nPollenWeight < momHere.ovuleWeight(ovule)){
-          mutCountDec();
+        //int ovule = m_myrand.get_uint(m_nOvule);
+        if (nPollenWeight < momHere.getMinOvuleWeight()){
           continue;
         }
         gamete *pollen = dadHere.makeGamete(m_myrand,m_nMarkers);
-        mutate(*pollen);
         if(!(momHere(*pollen))){ //check compatibility
           delete pollen;
           continue;
@@ -241,7 +272,7 @@ void Population::pollenDispersal(int dad)
   //    delete pollen;
         //    continue;
   //  }
-
+        int ovule = momHere.getMinOvuleID();
         momHere.setOvuleWeight(nPollenWeight,ovule);
         momHere.setOvuleGenes(pollen,ovule);
   
@@ -265,27 +296,19 @@ void Population::seedDispersal(int mom)
   //int nY = xy.second;
   for (int seed=0; seed < m_nOvule; seed++)
     {
-      if (momHere.ovuleWeight(seed)==0){ //No pollen landed in this ovule
-          mutCountDec();  //decrease mutation count for the female gamete
+      if (momHere.ovuleWeight(seed)==0) //No pollen landed in this ovule
           continue; //skip to next ovule
-      }
       m_nFecundity ++;
       momHere.setOvuleWeight(0, seed); //clear out weight 
 
       int nNewCell = sDisp(m_myrand,nX, nY); 
-      if (nNewCell == -1){ //reject if dispersal out of landscape
-        mutCountDec();
+      if (nNewCell == -1) //reject if dispersal out of landscape
         continue;
-      }
       unsigned int nSeedWeight = m_myrand.get_uint32();
-      if (nSeedWeight < m_vPop2[nNewCell].weight()){
-        mutCountDec();
+      if (nSeedWeight < m_vPop2[nNewCell].weight())
         continue;
-      }
-
       gamete *pollen = momHere.ovule(seed);
       gamete *ovule = momHere.makeGamete(m_myrand,m_nMarkers);
-      mutate(*ovule); 
       // TODO: newIndividual should hold the reference to ovule and pollen instead
       // of making a copy.
       m_vPop2[nNewCell].newIndividual(pollen, ovule, nSeedWeight);
@@ -442,87 +465,6 @@ inline T sq(const T& t) {
 	return t*t;
 }
 
-/*
-
-void Population::samplePop(int gen)
-{
-    if (gen == 0)
-        return;
-    int sampleSz = (m_nIndividuals*0.2); //sample 20% of individuals
-    double M = 2.0*sampleSz;
-    double s2 = 0.0;
-    int popCount = m_nIndividuals;
-    for(int i=0; i<m_nIndividuals; i++){
-      if(m_vPop2[i].weight() == 0)
-        popCount -= 1;
-    }
-    int i = 0;
-    int sample_count = 0;
-    random_shuffle(m_nPopSample.begin(),m_nPopSample.end());
-    cout << m_nPopSample[0] << endl;
-    while(m_nPopSample.size() && sample_count < sampleSz){
-      Individual &I = m_vPop2[m_nPopSample[i]];
-      if(I.weight()==0){
-        i++;
-        continue;
-      }
-      for(int m = 0; m < m_nMarkers+1; m++){
-        popstats stats;
-        stats.num_allele[I.dadGene(m)] += 1;
-        stats.num_allele[I.momGene(m)] += 1;
-        if(I.dadGene(m) == I.momGene(m))
-          stats.num_homo += 1;
-        if(I.dadGpar(m) == I.momGpar(m))
-          stats.num_ibd += 1;
-        if(m == 0){
-          if(m_sBound == "rectangle"){
-            stats.sum_dist2 += euclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
-            stats.sum_dist2 += euclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
-          }
-          else{
-            stats.sum_dist2 += minEuclideanDist2(I.dadPos(),i,m_nMaxX, m_nMaxY);
-            stats.sum_dist2 += minEuclideanDist2(I.momPos(),i,m_nMaxX, m_nMaxY);
-          }
-          if(I.dadDel()==1 && I.momDel()==1){
-            stats.num_del2++;
-            stats.del_freq += 2;
-          }
-          else if(I.dadDel()==1 || I.momDel()==1){
-            stats.num_del1++;
-            stats.del_freq ++;
-          }
-        }
-      
-        int dt = 0;
-        foreach(popstats::alleledb::value_type &vv, stats.num_allele){
-          dt += sq(vv.second);
-        }
-        if(m==0)
-          s2 = 0.5*stats.sum_dist2/M;
-        double ibd = stats.num_ibd/(1.0*sampleSz);
-        double hibd = stats.num_homo/(1.0*sampleSz);
-        double f = dt/sq(M);
-        double Ke = 1.0/f;
-
-        double theta_ke = Ke-1.0;
-        double N_ke = 0.25*theta_ke/m_pMut;
-        double Nb_ke = 4.0*M_PI*s2*N_ke/(m_nMaxX*m_nMaxY);
-        double Ko = (double)stats.num_allele.size();
-        string t = "\t";
-        int hoDom = sampleSz - stats.num_del1 - stats.num_del2;
-
-  // TODO: Try using fopen/fwritef, the c routines are often faster than c++
-       dout <<gen<<t<<m<<t<<ibd<<t<<hibd<<t<<Ko<<t<<Ke<<t<<s2<<t
-        <<theta_ke<<t<<N_ke<<t<<Nb_ke<<t<<m_nLethal<<t<<stats.num_del2
-         <<t<<stats.num_del1<<t<<hoDom<<t<<stats.del_freq/M<<t<<popCount<<t<<m_nFecundity<<endl;
-      }
-      i++;
-      sample_count++;
-
-    }
-}
-
-*/
 
 
  void Population::samplePop(int gen)
@@ -551,6 +493,12 @@ void Population::samplePop(int gen)
          //for(int i=0; i<sampleSz; i++)
          {
              Individual &I = m_vPop2[m_nPopSample[i]];
+             //cout << "m: " << m << "dad: " << I.dadGene(m) << "\n"
+             //<< "mom: " << I.momGene(m) << "\n"
+             //<< "dadPos: " << I.dadPos() << "\n"
+             //<< "momPos: " << I.momPos() << "\n" 
+             //<< "dadGpar: " << I.dadGpar(m) << "\n"
+             //<< "momGpar: " << I.momGpar(m) << endl;
              if(I.weight()== 0){
                 i++;
                 continue;
@@ -564,8 +512,9 @@ void Population::samplePop(int gen)
              stats.num_allele[I.momGene(m)] += 1;
              if(I.dadGene(m) == I.momGene(m))
                  stats.num_homo += 1;
-             if(I.dadGpar(m) == I.momGpar(m))
+             if(I.dadGpar(m) == I.momGpar(m)){
                  stats.num_ibd += 1;
+               }
              if(m == 0)
              {
                  if(m_sBound=="rectangle"){
@@ -576,13 +525,16 @@ void Population::samplePop(int gen)
                    stats.sum_dist2 += minEuclideanDist2(I.dadPos(),pos,m_nMaxX, m_nMaxY);
                    stats.sum_dist2 += minEuclideanDist2(I.momPos(),pos,m_nMaxX, m_nMaxY);
                  }
-                 if(I.dadDel()==1 && I.momDel()==1){
-                     stats.num_del2++;
-                     stats.del_freq += 2;
-                 }
-                 else if(I.dadDel()==1 || I.momDel()==1){
-                     stats.num_del1++;
+
+                 if(I.dadDel()!=0)
                      stats.del_freq ++;
+                 if(I.momDel()!=0)
+                     stats.del_freq ++;
+                 if(I.dadDel()!=0 && I.dadDel()==I.momDel()){
+                     stats.num_del2++;
+                 }
+                 else if(I.dadDel()!=0 || I.momDel()!=0){
+                     stats.num_del1++;
                  }
              }
              i++;

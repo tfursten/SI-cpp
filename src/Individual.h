@@ -228,13 +228,20 @@ class Individual
     inline int momDel(){return m_genes.del.second;}
     inline int dadGpar(int n) {return m_genes.gpar.h1[n];}
     inline int momGpar(int n) {return m_genes.gpar.h2[n];}
-    inline int dadPos() {return m_genes.gpar.h1[0];}
-    inline int momPos() {return m_genes.gpar.h2[0];}
+    inline int dadPos() {return m_genes.par.h1[0];}
+    inline int momPos() {return m_genes.par.h2[0];}
     inline unsigned int weight() {return m_nWeight;}
     inline unsigned int ovuleWeight(int n) 
     {return m_vOWeights[n];}
-    
+    unsigned int getMinOvuleWeight(){return *min_element(m_vOWeights.begin(),m_vOWeights.end());}
+    int getMinOvuleID(){
+      auto it = std::min_element(m_vOWeights.begin(),m_vOWeights.end());
+      return it-m_vOWeights.begin();}  
     inline gamete *ovule(int n) {return m_vOvules[n];}
+    void setDadGene(int m, int n) {m_genes.g.h1[m] = n;}
+    void setMomGene(int m, int n) {m_genes.g.h2[m] = n;}
+    void setDadDel(int n) {m_genes.del.first = n;}
+    void setMomDel(int n) {m_genes.del.second = n;}
     void setCoordinates(int position, int nMaxX, int nMaxY);
     void setWeight(unsigned int weight) {m_nWeight = weight;}
     void setOvuleWeight(unsigned int weight, int n) {m_vOWeights[n]=weight;}

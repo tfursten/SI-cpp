@@ -1,6 +1,9 @@
 #ifndef DISPERSE_INCLUDED
 #define DISPERSE_INCLUDED
 
+#include <fstream>
+#include <iomanip>
+#include <sstream>
 #include <boost/algorithm/string/predicate.hpp>
 
 #include "xorshift64.h"
@@ -23,6 +26,14 @@ int key_switch(A &ss, const B (&key)[N])
 
 }
 
+/*template <typename T>
+std::string to_string_p(const T a_value, const int n = 6)
+{
+    std::ostringstream out;
+    out << std::setprecision(n) << a_value;
+    return out.str();
+}
+*/
 typedef pair<int,int> xyCoord;
 
 class Dispersal
@@ -33,24 +44,28 @@ protected:
     
 public:
     template<class A>
-    bool initialize(A &dist_name, int x, int y, bool fast, std::string landscape, float p1, float p2=0) {
+    bool initialize(A &dist_name, int x, int y, bool fast,\
+        std::string landscape, float p1, float p2=0) {
         bool ff = fast;
-        if(landscape == "torus")
+        if(landscape == "torus"){
             boundary = &Dispersal::periodic;
-        else
+            std::cout << "Periodic Boundary" << std::endl;
+        }
+        else{
             boundary = &Dispersal::absorbing;
+            std::cout << "Absorbing Boundary" << std::endl;
+        }
         maxX = x;
         maxY = y;
 
         if(ff){
             static const char name_keys[][16] = {
-            "triangular", "rayleigh", "ring", "uniform"
+            "triangular", "rayleigh", "ring"
             };
             static const fptr dist_ops[] = {
                 &Dispersal::disc_triangular,
                 &Dispersal::disc_rayleigh,
-                &Dispersal::disc_ring,
-                &Dispersal::disc_uniform
+                &Dispersal::disc_ring
             };
             int pos = key_switch(dist_name, name_keys); 
             if(pos == -1) {
@@ -67,7 +82,8 @@ public:
         }
         if(!ff){
             static const char name_keys[][16] = {
-            "exponential", "triangular", "normal", "rayleigh", "ring", "gamma"
+            "exponential", "triangular", "normal", "rayleigh", "ring", 
+            "gamma", "pareto", "rice", "uniform", "lomax"
             };
             static const fptr dist_ops[] = {
                 &Dispersal::cont_exponential,
@@ -75,7 +91,11 @@ public:
                 &Dispersal::cont_halfNormal,
                 &Dispersal::cont_rayleigh,
                 &Dispersal::cont_ring,
-                &Dispersal::cont_gamma
+                &Dispersal::cont_gamma,
+                &Dispersal::cont_pareto,
+                &Dispersal::cont_rice,
+                &Dispersal::disc_uniform,
+                &Dispersal::cont_lomax
             };
             int pos = key_switch(dist_name, name_keys); 
             if( pos == -1) {
@@ -83,13 +103,12 @@ public:
                 return false;
             }
             name = std::string(name_keys[pos]);
-            op = dist_ops[pos];
             set_param(name,p1,p2);
-
+            op = dist_ops[pos];
         }
         return true;
     }
-
+    
         
     inline std::string getName() { return name; }
     
@@ -102,12 +121,16 @@ public:
     int cont_halfNormal(xorshift64& rand, int x1, int y1);
     int cont_rayleigh(xorshift64& rand, int x1, int y1);
     int cont_ring(xorshift64& rand, int x1, int y1);
+    int cont_rice(xorshift64& rand, int x1, int y1);
     int cont_gamma(xorshift64& rand, int x1, int y1);
+    int cont_pareto(xorshift64& rand, int x1, int y1);
+    int cont_lomax(xorshift64& rand, int x1, int y1);
     int disc_triangular(xorshift64& rand, int x1, int y1);
     int disc_rayleigh(xorshift64& rand, int x1, int y1);
     int disc_ring(xorshift64& rand, int x1, int y1);
-    //int disc_rectangular(xorshift64& rand, int x1, int y1);
     int disc_uniform(xorshift64& rand, int x1, int y1);
+
+
 
     
 private:
@@ -124,8 +147,6 @@ private:
     Ring ring;
     Ray ray1;
     Ray ray2;
-    //Rect rect; not ready
-    
 
 };
 

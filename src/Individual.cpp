@@ -83,9 +83,7 @@ gamete *Individual::makeGameteHelper(int p, int m, haplotype *g0, haplotype *g1,
   
   return g;
 } 
-		   
 
-		   
 
 gamete *Individual::makeGamete(xorshift64& rand, int m)
 {
@@ -94,14 +92,14 @@ gamete *Individual::makeGamete(xorshift64& rand, int m)
     unsigned int h0 = r & 1;
     //unsigned int h1 = (h0+1)&1;
     r >>= 1;
-    int p = m+1;
+    int p = m;
     while ((r & 1) && (p >= 1))
     {
         r >>= 1;
         --p;
     }
 
-    
+    p ++;
     gamete *g;
     if(h0 == 0)
       {

@@ -59,7 +59,7 @@ private:
 	void pollenDispersal(int dad);
 	void seedDispersal(int mom);
 	void samplePop(int gen);
-	void mutate(gamete &g);
+	void mutate(Individual &I);
 	void mutCountDec();
 
 protected:
