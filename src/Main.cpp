@@ -6,7 +6,7 @@ int main(int ac, char** av)
     namespace po = boost::program_options;
     using namespace std;
 
-    static int nGenerations, nMaxX, nMaxY, nPollen, nOvule, nMarkers, nBurnIn, nSample;
+    static int nGenerations, nMaxX, nMaxY, nPollen, nOvule, nMarkers, nDel, nBurnIn, nSample;
     unsigned int seed;
     static double dSMut, dMMut, dDMut, dSigmaP, dSigmaS, dPdel;
     static float p1, p2;
@@ -30,6 +30,7 @@ int main(int ac, char** av)
         ("pollen,p", po::value<int>(&nPollen)->default_value(10), "Set number of pollen produced per individual")
         ("ovule,o", po::value<int>(&nOvule)->default_value(10), "Set number of ovules per individual")
         ("markers,n", po::value<int>(&nMarkers)->default_value(3), "Set number of markers")
+        ("del_mark", po::value<int>(&nDel)->default_value(1), "Set number of deleterious markers")
         ("smut,u", po::value<double>(&dSMut)->default_value(0.00001), "Set S locus mutation rate")
         ("mmut,m", po::value<double>(&dMMut)->default_value(0.00001), "Set marker mutation rate")
         ("pdel", po::value<double>(&dPdel)->default_value(1.0),"Set deleterious selection coefficient")
@@ -90,9 +91,18 @@ int main(int ac, char** av)
             }
         }
 
-        assert(dSMut>0);
-        assert(dMMut>0);
-        assert(dSMut>0);
+        assert(dSMut>=0);
+        assert(dMMut>=0);
+        assert(dDMut>=0);
+        assert(nMaxX>0);
+        assert(nMaxY>0);
+        assert(nGenerations>0);
+        assert(nSample>0);
+        assert(nPollen>0);
+        assert(nOvules>0);
+        assert(nMarkers>0);
+        assert(nDel>0);
+        assert(dPdel>=0);
 
 
 
@@ -105,6 +115,7 @@ int main(int ac, char** av)
             << "Number of pollen set to " << nPollen << ".\n"
             << "Number of ovules set to " << nOvule << ".\n"
             << "Number of markers set to " << nMarkers << ".\n"
+            << "Number of deleterious markers set to " << nDel << ".\n"
             << "S mutation rate set to " << dSMut<< ".\n"
             << "Marker mutation rate set to " << dMMut << ".\n"
             << "Deleterious mutation rate set to " << dDMut << ".\n"
@@ -145,7 +156,7 @@ int main(int ac, char** av)
     //Initialize Population
     clock_t start = clock();
     Population pop(pout, dout);
-    pop.initialize(nMaxX,nMaxY,bound,nPollen,nOvule, nMarkers,dSigmaP, dSigmaS, si, dist_name, p1, p2, f);
+    pop.initialize(nMaxX,nMaxY,bound,nPollen,nOvule, nMarkers, nDel, dSigmaP, dSigmaS, si, dist_name, p1, p2, f);
     pop.param(dSMut, dMMut, dDMut,dPdel, seed);
     //Run Simulation
     pop.evolve(nBurnIn, nGenerations, nSample);

@@ -19,6 +19,7 @@
 #include "disk.h"
 
 
+
 #define foreach BOOST_FOREACH
 
 
@@ -33,6 +34,8 @@ private:
     int m_nPollen;
     int m_nOvule;
     int m_nMarkers;
+    int m_nDel;
+    int m_nLoci;
     int m_nIndividuals;
     int m_nSalleles;
     int m_nAlleles;
@@ -42,7 +45,7 @@ private:
     double m_dSigmaS;
     double m_pMut;
     double m_pDMut;
-    double m_pSMut;
+    double m_pMMut;
     double m_pDel;
     int m_nMutCount;
 	xorshift64 m_myrand;
@@ -67,7 +70,7 @@ protected:
 
 public:
     Population(std::ofstream &p, std::ofstream &d): pout(p), dout(d) {};
-    void initialize(int nMaxX, int nMaxY, std::string bound, int nPollen, int nOvule, int nMarkers, float dSigmaP, float dSigmaS,std::string si, std::string dist_name, float pp, float sp, bool fast);
+    void initialize(int nMaxX, int nMaxY, std::string bound, int nPollen, int nOvule, int nMarkers, int nDel, float dSigmaP, float dSigmaS,std::string si, std::string dist_name, float pp, float sp, bool fast);
     void param(double dSMut, double dMMut, double dDMut, double dPdel, unsigned int seed);
     void evolve(int nGenerations, int nBurnIn, int nSample);
     

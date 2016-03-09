@@ -62,12 +62,12 @@ bool Individual::bsi(gamete &dad)
   return true;
 }
 
-gamete *Individual::makeGameteHelper(int p, int m, haplotype *g0, haplotype *g1, haplotype *par0, haplotype *par1)
+gamete *Individual::makeGameteHelper(int p, int m, int d, haplotype *g0, haplotype *g1, haplotype *par0, haplotype *par1)
 {
   // Helper class for makeGamete(). Replaced vector::assign() with cstring
   // memcpy (on array) for efficency.
 
-  gamete *g = new gamete(m);
+  gamete *g = new gamete(m, d);
 
   // Take the first p alleles from g0 and par0, the remaining alleles
   // come from g1/par1 
@@ -85,7 +85,7 @@ gamete *Individual::makeGameteHelper(int p, int m, haplotype *g0, haplotype *g1,
 } 
 
 
-gamete *Individual::makeGamete(xorshift64& rand, int m)
+gamete *Individual::makeGamete(xorshift64& rand, int m, int d)
 {
 
     unsigned int r = rand.get_uint32();
@@ -103,29 +103,39 @@ gamete *Individual::makeGamete(xorshift64& rand, int m)
     gamete *g;
     if(h0 == 0)
       {
-	g = makeGameteHelper(p, m, m_genes.g.h1, m_genes.g.h2, m_genes.par.h1, m_genes.par.h2);
+	g = makeGameteHelper(p, m, d, m_genes.g.h1, m_genes.g.h2, m_genes.par.h1, m_genes.par.h2);
 	g->s = make_pair(m_genes.g.h1[0], m_genes.g.h2[0]);
       }
     else
       {
-	g = makeGameteHelper(p, m, m_genes.g.h2, m_genes.g.h1, m_genes.par.h2, m_genes.par.h1);
+	g = makeGameteHelper(p, m, d, m_genes.g.h2, m_genes.g.h1, m_genes.par.h2, m_genes.par.h1);
 	g->s = make_pair(m_genes.g.h2[0], m_genes.g.h1[0]);
       }
     
     // Fill in the array 
     fill_n(g->par, m+1, m_nPosition);
-    g->del = (r&1) ? m_genes.del.first : m_genes.del.second;
+
+    for(int i=0; i<d; i++){
+      if(r&1){
+        memcpy(&(g->del[i]),&(m_genes.del.h1[i]),sizeof(haplotype));
+      }
+      else{
+        memcpy(&(g->del[i]),&(m_genes.del.h2[i]),sizeof(haplotype));
+      }
+      r >>= 1;
+    }
     
     return g;
 }
 
 
 
-void Individual::initVars(unsigned int pos, int nOvules, int nMarkers, unsigned int nWeight, unsigned int mX, unsigned int mY)
+void Individual::initVars(unsigned int pos, int nOvules, int nMarkers, int nDel, unsigned int nWeight, unsigned int mX, unsigned int mY)
 {
   // Added due to issue where one of the constructors was initializing a variable
   // but not the other. Initialize all Individual's variables/settings here
   m_nMarkers = nMarkers;
+  m_nDel = nDel;
   m_nOvules = nOvules;
   m_nPosition = pos;
   m_nWeight = nWeight;
@@ -141,12 +151,12 @@ void Individual::initVars(unsigned int pos, int nOvules, int nMarkers, unsigned 
   m_vOvules = new gamete*[nOvules];
   for(int i = 0; i < nOvules; i++)
     {
-      gamete *gam = new gamete(nMarkers);
+      gamete *gam = new gamete(nMarkers,nDel);
       m_vOvules[i] = gam;
     } 
 }
 
-void Individual::initGenes(int m, haplotype *dad, haplotype *mom)
+void Individual::initGenes(int m, int d, haplotype *dad, haplotype *mom)
 {
   // genes are a reference to the genotype already created on the heap 
   m_genes.g.h1 = dad;
@@ -158,6 +168,8 @@ void Individual::initGenes(int m, haplotype *dad, haplotype *mom)
   m_genes.par.h2 = new haplotype[m+1];
   m_genes.gpar.h1 = new haplotype[m+1];
   m_genes.gpar.h2 = new haplotype[m+1];
+  m_genes.del.h1 = new haplotype[d];
+  m_genes.del.h2 = new haplotype[d];
   
 
   // The individual's parent and grandparent genome is unknown.
@@ -166,9 +178,9 @@ void Individual::initGenes(int m, haplotype *dad, haplotype *mom)
   fill_n(m_genes.par.h2, m+1, NULL_GENE);
   fill_n(m_genes.gpar.h1, m+1, NULL_GENE);
   fill_n(m_genes.gpar.h2, m+1, NULL_GENE);
-  
-  // no deleterous allele yet
-  m_genes.del = std::make_pair(0,0);
+  //no deleterious genes yet
+  fill_n(m_genes.del.h1, d, 0);
+  fill_n(m_genes.del.h2, d, 0);
 }
 
 void Individual::setCoordinates(int position, int nMaxX, int nMaxY)
@@ -204,6 +216,8 @@ Individual::~Individual()
   delete[] m_genes.par.h2;
   delete[] m_genes.gpar.h1;
   delete[] m_genes.gpar.h2;
+  delete[] m_genes.del.h1;
+  delete[] m_genes.del.h2;
   for(unsigned int a = 0; a < m_nOvules; a++)
     delete m_vOvules[a]; // delete every referenced object
   delete [] m_vOvules; // delete the array of reference

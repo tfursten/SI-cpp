@@ -26,7 +26,7 @@ struct genes
   genotype g;
   genotype par;
   genotype gpar;
-  std::pair<int,int> del;
+  genotype del;
 
 };
 
@@ -35,23 +35,24 @@ struct gamete
   haplotype *h;
   haplotype *par;
   haplotype *gpar;
-  int del;
+  haplotype *del;
   int nLoci;
   std::pair<unsigned int,unsigned int> s;
 
-  gamete(int m)
+  gamete(int m, int d)
   {
     nLoci = m;
     h = new haplotype[m+1];
     par = new haplotype[m+1];
     gpar = new haplotype[m+1];
+    del = new haplotype[d];
     std::fill_n(h, m+1, NULL_GENE);
     std::fill_n(par, m+1, NULL_GENE);
     std::fill_n(gpar, m+1, NULL_GENE);
     //memset(h, NULL_GENE, HAP_SIZE(m)); //TODO: Is this neccessary???
     //memset(par, NULL_GENE, HAP_SIZE(m));
     //memset(gpar, NULL_GENE, HAP_SIZE(m));
-    del = 0;
+    std::fill_n(del, d, NULL_GENE);
     s = std::make_pair(0,0);
   }
 
@@ -60,6 +61,7 @@ struct gamete
     delete[] h;
     delete[] par;
     delete[] gpar;
+    delete[] del;
   }
 };
 
@@ -84,13 +86,14 @@ class Individual
   std::vector<unsigned int> m_vOWeights; // TODO: make this a int[] to run faster.
   genes m_genes;
   int m_nMarkers;
+  int m_nDel;
   int maxX;
   int maxY;
   int x_coord; // current position (x, y) on grid.
   int y_coord;
   
-  void initVars(unsigned int pos, int nOvules, int nMarkers, unsigned int nWeight, unsigned int maxX, unsigned int maxY);
-  gamete *makeGameteHelper(int, int, haplotype *, haplotype *, haplotype *, haplotype *);
+  void initVars(unsigned int pos, int nOvules, int nMarkers, int nDel, unsigned int nWeight, unsigned int maxX, unsigned int maxY);
+  gamete *makeGameteHelper(int, int, int, haplotype *, haplotype *, haplotype *, haplotype *);
 
  protected:
   typedef bool(Individual::*fptr)(gamete&);
@@ -106,15 +109,15 @@ class Individual
       memcpy(dad, i.m_genes.g.h1, HAP_SIZE(i.m_nMarkers));
       memcpy(mom, i.m_genes.g.h2, HAP_SIZE(i.m_nMarkers));
    
-      initVars(i.m_nPosition, i.m_nOvules, i.m_nMarkers,i.m_nWeight, i.maxX, i.maxY);
-      initGenes(m_nMarkers, dad, mom);
+      initVars(i.m_nPosition, i.m_nOvules, i.m_nMarkers, i.m_nDel, i.m_nWeight, i.maxX, i.maxY);
+      initGenes(m_nMarkers, m_nDel, dad, mom);
 
     }
 
   Individual &operator=(const Individual &i) = default;
   
 
-  Individual(unsigned int pos, int nOvules, int nMarkers, unsigned int maxX, unsigned int maxY)
+  Individual(unsigned int pos, int nOvules, int nMarkers, int nDel, unsigned int maxX, unsigned int maxY)
     { 
       // create new set of known haplotypes
       haplotype *dad = new haplotype[nMarkers+1];
@@ -124,14 +127,14 @@ class Individual
       std::fill_n(dad, nMarkers+1, NULL_GENE);
       std::fill_n(mom, nMarkers+1, NULL_GENE);
 
-      initVars(pos, nOvules, nMarkers, 0, maxX, maxY);
-      initGenes(nMarkers, dad, mom);
+      initVars(pos, nOvules, nMarkers, nDel, 0, maxX, maxY);
+      initGenes(nMarkers, nDel, dad, mom);
     }
 
-  Individual(unsigned int pos, int nOvules, int nMarkers, unsigned int maxX, unsigned int maxY, haplotype *dad, haplotype *mom)
+  Individual(unsigned int pos, int nOvules, int nMarkers, int nDel, unsigned int maxX, unsigned int maxY, haplotype *dad, haplotype *mom)
     {
-      initVars(pos, nOvules, nMarkers, 1, maxX, maxY);
-      initGenes(nMarkers, dad, mom);
+      initVars(pos, nOvules, nMarkers, nDel, 1, maxX, maxY);
+      initGenes(nMarkers, nDel, dad, mom);
     }
 
     /**
@@ -167,8 +170,10 @@ class Individual
       memcpy(m_genes.gpar.h1, dad->gpar, HAP_SIZE(m_nMarkers));
       memcpy(m_genes.gpar.h2, mom->gpar, HAP_SIZE(m_nMarkers));
 
-      m_genes.del = std::make_pair(dad->del, mom->del);
-      
+      // Set deleterious alleles
+      memcpy(m_genes.del.h1, dad->del, HAP_SIZE(m_nDel-1));
+      memcpy(m_genes.del.h2, mom->del, HAP_SIZE(m_nDel-1));
+
     }
 
     static void initDomRank(xorshift64& rand, int nAlleles)
@@ -224,8 +229,8 @@ class Individual
     inline int position() {return m_nPosition;}
     inline int dadGene(int n) {return m_genes.g.h1[n];}
     inline int momGene(int n) {return m_genes.g.h2[n];}
-    inline int dadDel(){return m_genes.del.first;}
-    inline int momDel(){return m_genes.del.second;}
+    inline int dadDel(int n){return m_genes.del.h1[n];}
+    inline int momDel(int n){return m_genes.del.h2[n];}
     inline int dadGpar(int n) {return m_genes.gpar.h1[n];}
     inline int momGpar(int n) {return m_genes.gpar.h2[n];}
     inline int dadPos() {return m_genes.par.h1[0];}
@@ -240,8 +245,8 @@ class Individual
     inline gamete *ovule(int n) {return m_vOvules[n];}
     void setDadGene(int m, int n) {m_genes.g.h1[m] = n;}
     void setMomGene(int m, int n) {m_genes.g.h2[m] = n;}
-    void setDadDel(int n) {m_genes.del.first = n;}
-    void setMomDel(int n) {m_genes.del.second = n;}
+    void setDadDel(int m, int n) {m_genes.del.h1[m] = n;}
+    void setMomDel(int m, int n) {m_genes.del.h2[m] = n;}
     void setCoordinates(int position, int nMaxX, int nMaxY);
     void setWeight(unsigned int weight) {m_nWeight = weight;}
     void setOvuleWeight(unsigned int weight, int n) {m_vOWeights[n]=weight;}
@@ -251,8 +256,8 @@ class Individual
       m_vOvules[n] = pollen;
       delete tmp;
     }
-    gamete *makeGamete(xorshift64& rand, int nMarkers);
-    void initGenes(int m, haplotype *dad, haplotype *mom);
+    gamete *makeGamete(xorshift64& rand, int nMarkers, int nDel);
+    void initGenes(int m, int d, haplotype *dad, haplotype *mom);
     void clearOvuleWeight(int nOvules);
     bool nsi(gamete &dad);
     bool psi(gamete &dad);

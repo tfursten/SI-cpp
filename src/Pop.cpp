@@ -42,7 +42,9 @@ inline int xy2i(position xy, int mx, int my) {
 	return xy2i(xy.first,xy.second,mx,my);
 }
 
-void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen, int nOvule, int nMarkers,float dSigmaP, float dSigmaS,  string si, string dist_name, float pp, float sp, bool fast)
+void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen,\
+ int nOvule, int nMarkers, int nDel, float dSigmaP, float dSigmaS,  string si, string dist_name, \
+ float pp, float sp, bool fast)
 {
   m_nMaxX = nMaxX;
   m_nMaxY = nMaxY;
@@ -50,6 +52,7 @@ void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen, int
   m_nPollen = nPollen;
   m_nOvule = nOvule;
   m_nMarkers = nMarkers;
+  m_nDel = nDel;
   m_nIndividuals = nMaxX * nMaxY;
   m_nSalleles = 0;
   m_nAlleles = 0;
@@ -80,8 +83,8 @@ void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen, int
         h1[jjj] = m_nAlleles++;
       }
       
-      m_vPop1.emplace_back(iii, m_nOvule, m_nMarkers, m_nMaxX, m_nMaxY, h0, h1);
-      m_vPop2.emplace_back(iii, m_nOvule, m_nMarkers, m_nMaxX, m_nMaxY);
+      m_vPop1.emplace_back(iii, m_nOvule, m_nMarkers, m_nDel, m_nMaxX, m_nMaxY, h0, h1);
+      m_vPop2.emplace_back(iii, m_nOvule, m_nMarkers, m_nDel, m_nMaxX, m_nMaxY);
       m_nPopSample.push_back(iii);
     }
 
@@ -102,88 +105,64 @@ void Population::param(double dSMut, double dMMut, double dDMut, double dPdel, u
     }
     m_myrand.seed(seed);
     m_pDel = dPdel;
-    m_pMut = -log((pow(1-dMMut, m_nMarkers))*(1-dSMut)*(1-dDMut));
-    double totmut =  dDMut + dSMut + m_nMarkers*dMMut;
-    m_pDMut = dDMut/totmut;
-    m_pSMut = dSMut/totmut;
+
+    m_pMut = -log((pow(1-dMMut, m_nMarkers))*(1-dSMut)*pow(1-dDMut, m_nDel));
+    double totmut =  m_nDel*dDMut + dSMut + m_nMarkers*dMMut;
+    m_pDMut = (m_nDel * dDMut)/totmut;
+    m_pMMut = (m_nMarkers * dMMut)/totmut;
+    m_nLoci = 1;
     setMutCount();
 }
 
 void Population::setMutCount() {
-
     m_nMutCount = floor(rand_exp(m_myrand, m_pMut));
+    //cout << "mut count: " << m_nMutCount << endl;
 }
 
-inline void Population::mutCountDec() {
-    if (--m_nMutCount > 0)
-        return;
-    setMutCount();
-}
-
-/*
-void Population::mutate(gamete &g)
-{
-
-    if (--m_nMutCount > 0)
+void Population::mutCountDec(){
+    if(m_nMutCount-m_nLoci > 0){
+      m_nMutCount -= m_nLoci;
       return;
-    
+    }
     setMutCount();
-    double rand = m_myrand.get_double52();
-    if (rand < m_pDMut)
-      {
-        g.del = m_nAlleles++;
-        return;
-      }
-    if ((rand < (m_pSMut+m_pDMut)) && (rand >= m_pDMut))
-      {
-        g.h[0] = m_nSalleles++;
-        Individual::addDomRank(m_myrand.get_uint64());
-        return;
-      }
-    if (rand >= (m_pSMut+m_pDMut))
-      {
-        g.h[1+m_myrand.get_uint(m_nMarkers)] = m_nAlleles++;
-        return;
-      }
-    
-}*/
+      return;
+}
 
 void Population::mutate(Individual &I)
 {
-
-    if (m_nMutCount-2 > 0){
-      m_nMutCount -= 2;
+    int count = m_nMutCount-m_nLoci;
+    if (count > 0){
+      m_nMutCount -= m_nLoci;
       return;
     }
-    bool chr = m_nMutCount == 1 ? 0 : 1;
-    setMutCount();
-    double ran = m_myrand.get_double52();
-    if (ran < m_pDMut)
+    while(count< m_nLoci){
+      bool chr = m_nMutCount == 1 ? 0 : 1;
+      setMutCount();
+      count += m_nMutCount;
+      double ran = m_myrand.get_double52();
+      if(ran < m_pDMut)
       {
-        if(chr)
-          I.setMomDel(m_nAlleles++);
-        else
-          I.setDadDel(m_nAlleles++);
-        return;
+          if(chr)
+            I.setMomDel(m_myrand.get_uint(m_nDel), 1);
+          else
+            I.setDadDel(m_myrand.get_uint(m_nDel), 1);
       }
-    if ((ran < (m_pSMut+m_pDMut)) && (ran >= m_pDMut))
+      else if ((ran < (m_pMMut + m_pDMut)) && (ran >= m_pDMut))
       {
-        if(chr)
-          I.setMomGene(0,m_nSalleles++);
-        else
-          I.setDadGene(0,m_nSalleles++);
-        Individual::addDomRank(m_myrand.get_uint64());
-        return;
+          if(chr)
+            I.setMomGene(1+m_myrand.get_uint(m_nMarkers),m_nAlleles++);
+          else
+            I.setDadGene(1+m_myrand.get_uint(m_nMarkers),m_nAlleles++);
       }
-    if (ran >= (m_pSMut+m_pDMut))
+      else
       {
-        if(chr)
-          I.setMomGene(1+m_myrand.get_uint(m_nMarkers),m_nAlleles++);
-        else
-          I.setDadGene(1+m_myrand.get_uint(m_nMarkers),m_nAlleles++);
-        return;
+          if(chr)
+            I.setMomGene(0,m_nSalleles++);
+          else
+            I.setDadGene(0,m_nSalleles++);
+          Individual::addDomRank(m_myrand.get_uint64());
       }
-    
+    }
 }
 
 void Population::evolve(int nBurnIn, int nGenerations, int nSample)
@@ -223,20 +202,22 @@ inline int wrap_around(int x, int w) {
 }
 
 
-
 void Population::pollenDispersal(int dad)
 {
     Individual &dadHere = m_vPop1.at(dad);
     if(dadHere.weight() == 0)
         return;
-    if(dadHere.dadDel()!=0 && dadHere.dadDel() == dadHere.momDel()){
-        if (m_pDel == 1.0 || m_myrand.get_double52() < m_pDel){ //Check if sterile
-          m_nLethal++;
+    for(int d=0; d<m_nDel; d++){
+      if(dadHere.dadDel(d)!=0 && dadHere.momDel(d) != 0){
+        if(m_pDel == 1.0 || m_myrand.get_double52() < m_pDel){
+          m_nLethal ++;
           dadHere.setWeight(0);
-          mutate(dadHere);
+          mutCountDec();
           return;
         }
+      }
     }
+
     mutate(dadHere);
     int nX = dadHere.coordX();
     int nY = dadHere.coordY();
@@ -257,7 +238,7 @@ void Population::pollenDispersal(int dad)
         if (nPollenWeight < momHere.getMinOvuleWeight()){
           continue;
         }
-        gamete *pollen = dadHere.makeGamete(m_myrand,m_nMarkers);
+        gamete *pollen = dadHere.makeGamete(m_myrand,m_nMarkers,m_nDel);
         if(!(momHere(*pollen))){ //check compatibility
           delete pollen;
           continue;
@@ -308,7 +289,7 @@ void Population::seedDispersal(int mom)
       if (nSeedWeight < m_vPop2[nNewCell].weight())
         continue;
       gamete *pollen = momHere.ovule(seed);
-      gamete *ovule = momHere.makeGamete(m_myrand,m_nMarkers);
+      gamete *ovule = momHere.makeGamete(m_myrand,m_nMarkers,m_nDel);
       // TODO: newIndividual should hold the reference to ovule and pollen instead
       // of making a copy.
       m_vPop2[nNewCell].newIndividual(pollen, ovule, nSeedWeight);
@@ -316,116 +297,6 @@ void Population::seedDispersal(int mom)
     }
 }
 
-/*
-void Population::pollenDispersal(int dad)
-{
-    Individual &dadHere = m_vPop1.at(dad);
-    if(dadHere.weight() == 0)
-        return;
-
-    int nX = dadHere.coordX();
-    int nY = dadHere.coordY();
-    ////position xy = i2xy(dad, m_nMaxX, m_nMaxY);
-    ////int nX = xy.first;
-    ////int nY = xy.second;
-
-    for (int p=0; p < m_nPollen; p++)
-    {
-        int nNewCell = pDisp(m_myrand,nX, nY);
-        if (nNewCell == -1)
-        {
-            mutCountDec();
-            continue;
-        }
-        Individual &momHere = m_vPop1[nNewCell];
-        if (momHere.weight() == 0)
-        {
-            mutCountDec();
-            continue;
-        }
-
-        unsigned int nPollenWeight = m_myrand.get_uint32();
-        int ovule = m_myrand.get_uint(m_nOvule);
-        if (nPollenWeight < momHere.ovuleWeight(ovule)){
-          mutCountDec();
-          continue;
-        }
-        gamete *pollen = dadHere.makeGamete(m_myrand,m_nMarkers);
-        mutate(*pollen);
-        if(!(momHere(*pollen))){ //check compatibility
-          delete pollen;
-          continue;
-        }
-	
-
-	// Moved conditional prior to make gamete for efficiency
-	//unsigned int nPollenWeight = m_myrand.get_uint32();
-        //int ovule = m_myrand.get_uint(m_nOvule);
-        //if (nPollenWeight < momHere.ovuleWeight(ovule))
-	//  {
-	//    delete pollen;
-        //    continue;
-	//  }
-
-        momHere.setOvuleWeight(nPollenWeight,ovule);
-        momHere.setOvuleGenes(pollen,ovule);
-	
-    }
-}
-
-void Population::seedDispersal(int mom)
-{
-  Individual &momHere = m_vPop1[mom];
-  if(momHere.weight() == 0) //No plant here
-    {
-      momHere.clearOvuleWeight(m_nOvule);  //clear out ovules for next generation
-      return;
-    }
-  momHere.setWeight(0); //clear out weight to mark as completed
-
-  int nX = momHere.coordX();
-  int nY = momHere.coordY();
-  //position xy = i2xy(mom,m_nMaxX,m_nMaxY);  
-  //int nX = xy.first;
-  //int nY = xy.second;
-  for (int seed=0; seed < m_nOvule; seed++)
-    {
-      if (momHere.ovuleWeight(seed)==0){ //No pollen landed in this ovule
-          mutCountDec();  //decrease mutation count for the female gamete
-          continue; //skip to next ovule
-      }
-      momHere.setOvuleWeight(0, seed); //clear out weight 
-
-      int nNewCell = sDisp(m_myrand,nX, nY); 
-      if (nNewCell == -1){ //reject if dispersal out of landscape
-        mutCountDec();
-        continue;
-      }
-      unsigned int nSeedWeight = m_myrand.get_uint32();
-      if (nSeedWeight < m_vPop2[nNewCell].weight()){
-        mutCountDec();
-        continue;
-      }
-
-      gamete *pollen = momHere.ovule(seed);
-      gamete *ovule = momHere.makeGamete(m_myrand,m_nMarkers);
-      mutate(*ovule);
-      if (ovule->del==1 && pollen->del==1){ // check if homozygous for deleterious mutation
-        if (m_pDel == 1.0 || m_myrand.get_double52() < m_pDel){ //Check if lethal
-          m_nLethal++;
-          delete ovule;
-          continue;
-        }
-      } 
-     
-      // TODO: newIndividual should hold the reference to ovule and pollen instead
-      // of making a copy.
-      m_vPop2[nNewCell].newIndividual(pollen, ovule, nSeedWeight);
-      delete ovule;	
-    }
-}
-
-*/
 
 double euclideanDist2(int i, int j, int mx, int my) {
 	auto xy1 = i2xy(i,mx,my);
@@ -467,11 +338,12 @@ inline T sq(const T& t) {
 
 
 
- void Population::samplePop(int gen)
+
+void Population::samplePop(int gen)
  {
      if (gen == 0)
          return;
-     int sampleSz = (m_nIndividuals*0.2); //sample 20% of individuals
+     int sampleSz = 500; 
      double M = 2.0*sampleSz;
      double s2 = 0.0;
      int popCount = m_nIndividuals;
@@ -525,15 +397,14 @@ inline T sq(const T& t) {
                    stats.sum_dist2 += minEuclideanDist2(I.dadPos(),pos,m_nMaxX, m_nMaxY);
                    stats.sum_dist2 += minEuclideanDist2(I.momPos(),pos,m_nMaxX, m_nMaxY);
                  }
-
-                 if(I.dadDel()!=0)
+                 if(I.dadDel(0)!=0)
                      stats.del_freq ++;
-                 if(I.momDel()!=0)
+                 if(I.momDel(0)!=0)
                      stats.del_freq ++;
-                 if(I.dadDel()!=0 && I.dadDel()==I.momDel()){
+                 if(I.dadDel(0)!=0 && I.dadDel(0)==I.momDel(0)){
                      stats.num_del2++;
                  }
-                 else if(I.dadDel()!=0 || I.momDel()!=0){
+                 else if(I.dadDel(0)!=0 || I.momDel(0)!=0){
                      stats.num_del1++;
                  }
              }
