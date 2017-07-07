@@ -4,6 +4,8 @@ Self-Incompatibility Simulation (c++ version)
 
 A spatially explicit individual-based model of a diploid plant population that reproduces according to five different models of self-incompatibility.
 
+[PeerJ Preprint](https://peerj.com/preprints/3042/)
+
 Author
 ------
 Tara Furstenau  
