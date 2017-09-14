@@ -6,12 +6,12 @@ int main(int ac, char** av)
     namespace po = boost::program_options;
     using namespace std;
 
-    static int nGenerations, nMaxX, nMaxY, nPollen, nOvule, nMarkers, nDel, nBurnIn, nSample;
+    static int nGenerations, nMaxX, nMaxY, nPollen, nOvule, nMarkers, nDel, nBurnIn, nSample, nAlleles;
     unsigned int seed;
     static double dSMut, dMMut, dDMut, dSigmaP, dSigmaS, dPdel;
     static float p1, p2;
     static bool f;
-    string bound, dist_name, si, infile, outfileName;
+    string bound, dist_name, si, infile, outfileName, mut_type;
 
     ostringstream out;
     try
@@ -32,6 +32,8 @@ int main(int ac, char** av)
         ("markers,n", po::value<int>(&nMarkers)->default_value(3), "Set number of markers")
         ("del_mark", po::value<int>(&nDel)->default_value(1), "Set number of deleterious markers")
         ("smut,u", po::value<double>(&dSMut)->default_value(0.00001), "Set S locus mutation rate")
+        ("mut-type", po::value<string>(&mut_type)->default_value(string("IAM")), "Mutation Model for S-alleles (IAM, KAM), Markers are IAM")
+        ("nAllele", po::value<int>(&nAlleles)->default_value(20), "Number of alleles for KAM, Number starting alleles for IAM")
         ("mmut,m", po::value<double>(&dMMut)->default_value(0.00001), "Set marker mutation rate")
         ("pdel", po::value<double>(&dPdel)->default_value(1.0),"Set deleterious selection coefficient")
         ("dmut", po::value<double>(&dDMut)->default_value(0.0001), "Set deleterious mutation rate for unlinked locus")
@@ -105,7 +107,10 @@ int main(int ac, char** av)
         assert(dPdel>=0);
 
 
-
+        if(mut_type != "IAM" && mut_type != "KAM"){
+            cout << "Not a valid mutation model" << endl;
+            throw;
+        }
 
         out << "X dimension set to " << nMaxX << ".\n"
             << "Y dimension set to " << nMaxY << ".\n"
@@ -119,10 +124,9 @@ int main(int ac, char** av)
             << "S mutation rate set to " << dSMut<< ".\n"
             << "Marker mutation rate set to " << dMMut << ".\n"
             << "Deleterious mutation rate set to " << dDMut << ".\n"
-            << "Selection coefficient of deleterious allele is " << dPdel << ".\n";
-
-
-
+            << "Selection coefficient of deleterious allele is " << dPdel << ".\n"
+            << "Mutation model set to " << mut_type << ".\n"
+            << "Number of alleles set to " << nAlleles << ".\n";
 
         assert(dSigmaP>0);
         assert(dSigmaS>0);
@@ -156,7 +160,7 @@ int main(int ac, char** av)
     //Initialize Population
     clock_t start = clock();
     Population pop(pout, dout);
-    pop.initialize(nMaxX,nMaxY,bound,nPollen,nOvule, nMarkers, nDel, dSigmaP, dSigmaS, si, dist_name, p1, p2, f);
+    pop.initialize(nMaxX,nMaxY,bound,nPollen,nOvule, nMarkers, nDel, dSigmaP, dSigmaS, si, dist_name, p1, p2, f, mut_type, nAlleles);
     pop.param(dSMut, dMMut, dDMut,dPdel, seed);
     //Run Simulation
     pop.evolve(nBurnIn, nGenerations, nSample);

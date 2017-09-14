@@ -44,7 +44,7 @@ inline int xy2i(position xy, int mx, int my) {
 
 void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen,\
  int nOvule, int nMarkers, int nDel, float dSigmaP, float dSigmaS,  string si, string dist_name, \
- float pp, float sp, bool fast)
+ float pp, float sp, bool fast, string mut_type, int nAlleles)
 {
   m_nMaxX = nMaxX;
   m_nMaxY = nMaxY;
@@ -54,8 +54,13 @@ void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen,\
   m_nMarkers = nMarkers;
   m_nDel = nDel;
   m_nIndividuals = nMaxX * nMaxY;
-  m_nSalleles = 0;
+  m_nSalleles = nAlleles; //pop will be initialized wth nAlleles S-alleles
   m_nAlleles = 0;
+  m_nMutAlleles = nAlleles;
+  if(mut_type == "IAM")
+    mutated_allele = &Population::mutate_iam;
+  else if(mut_type == "KAM")
+    mutated_allele = &Population::mutate_kam;
   ostringstream out;
   m_dSigmaP = dSigmaP;
   m_dSigmaS = dSigmaS;
@@ -68,26 +73,29 @@ void Population::initialize(int nMaxX, int nMaxY, string bound, int nPollen,\
   Individual::initialize(si);
   Individual::initDomRank(m_myrand,2*m_nIndividuals);
 
-  
-  // Initialize Population: each individual has unique allele
+ 
+  // Initialize Population: each individual has unique marker allele
+  // Pop initialized with m_nMutAllele S-alleles
   for(int iii=0; iii<m_nIndividuals; iii++)
-    {
+      {
       haplotype *h0 = new haplotype[nMarkers+1];
       haplotype *h1 = new haplotype[nMarkers+1];
-
-      h0[0] = m_nSalleles++;
-      h1[0] = m_nSalleles++;
+      h0[0] = iii%m_nMutAlleles;
+      h1[0] = (iii + 1) % m_nMutAlleles;
+      //h0[0] = m_nSalleles++;
+      //h1[0] = m_nSalleles++;
       for(int jjj=1; jjj<nMarkers+1; jjj++)
       {
-        h0[jjj] = m_nAlleles++;
-        h1[jjj] = m_nAlleles++;
+          h0[jjj] = m_nAlleles++;
+          h1[jjj] = m_nAlleles++;
       }
       
       m_vPop1.emplace_back(iii, m_nOvule, m_nMarkers, m_nDel, m_nMaxX, m_nMaxY, h0, h1);
       m_vPop2.emplace_back(iii, m_nOvule, m_nMarkers, m_nDel, m_nMaxX, m_nMaxY);
       m_nPopSample.push_back(iii);
-    }
+      }
 
+ 
   out << "Self-Incompatibility set to " << Individual::getName() << ".\n";
   cout << out.str();
   pout << out.str();
@@ -119,6 +127,16 @@ void Population::setMutCount() {
     //cout << "mut count: " << m_nMutCount << endl;
 }
 
+int Population::mutate_iam()
+{
+    return m_nSalleles ++;
+}
+
+int Population::mutate_kam()
+{ // careful casting uint64_t to int, ok because n_alleles will typically not be large
+    return (int)m_myrand.get_uint(m_nMutAlleles);
+}
+
 void Population::mutCountDec(){
     if(m_nMutCount-m_nLoci > 0){
       m_nMutCount -= m_nLoci;
@@ -140,7 +158,7 @@ void Population::mutate(Individual &I)
       setMutCount();
       count += m_nMutCount;
       double ran = m_myrand.get_double52();
-      if(ran < m_pDMut)
+      if(ran < m_pDMut) // deleterious mutation occurs
       {
           if(chr)
             I.setMomDel(m_myrand.get_uint(m_nDel), 1);
@@ -148,18 +166,19 @@ void Population::mutate(Individual &I)
             I.setDadDel(m_myrand.get_uint(m_nDel), 1);
       }
       else if ((ran < (m_pMMut + m_pDMut)) && (ran >= m_pDMut))
-      {
+      { // mutation in marker
           if(chr)
             I.setMomGene(1+m_myrand.get_uint(m_nMarkers),m_nAlleles++);
           else
             I.setDadGene(1+m_myrand.get_uint(m_nMarkers),m_nAlleles++);
       }
       else
-      {
+      { //mutation in S-allele
+          int allele = (this->*mutated_allele)();
           if(chr)
-            I.setMomGene(0,m_nSalleles++);
+            I.setMomGene(0, allele);
           else
-            I.setDadGene(0,m_nSalleles++);
+            I.setDadGene(0, allele);
           Individual::addDomRank(m_myrand.get_uint64());
       }
     }

@@ -41,6 +41,7 @@ private:
     int m_nAlleles;
     int m_nFecundity;
     int m_nLethal; //number of abortions
+    int m_nMutAlleles;
     double m_dSigmaP;
     double m_dSigmaS;
     double m_pMut;
@@ -63,14 +64,17 @@ private:
 	void seedDispersal(int mom);
 	void samplePop(int gen);
 	void mutate(Individual &I);
-	void mutCountDec();
+    void mutCountDec();
+    int mutate_iam();
+    int mutate_kam();
 
 protected:
+    int(Population::*mutated_allele)();
 
 
 public:
     Population(std::ofstream &p, std::ofstream &d): pout(p), dout(d) {};
-    void initialize(int nMaxX, int nMaxY, std::string bound, int nPollen, int nOvule, int nMarkers, int nDel, float dSigmaP, float dSigmaS,std::string si, std::string dist_name, float pp, float sp, bool fast);
+    void initialize(int nMaxX, int nMaxY, std::string bound, int nPollen, int nOvule, int nMarkers, int nDel, float dSigmaP, float dSigmaS,std::string si, std::string dist_name, float pp, float sp, bool fast, std::string mut_type, int nAlleles);
     void param(double dSMut, double dMMut, double dDMut, double dPdel, unsigned int seed);
     void evolve(int nGenerations, int nBurnIn, int nSample);
     
